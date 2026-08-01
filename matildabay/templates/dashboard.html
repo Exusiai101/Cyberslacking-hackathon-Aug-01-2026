@@ -28,10 +28,15 @@
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Council Allocations
     </button>
-    <button class="nav-tab-btn" data-tab="logs">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-      Scout Logs
+
+    <button class="nav-tab-btn" data-tab="marketplace">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 6v12"/></svg>
+      Marketplace & Wallets
     </button>
+    <a href="{% url 'forecasting' %}" class="nav-tab-btn" style="text-decoration: none;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      ML Forecasting Model
+    </a>
   </nav>
 
   <div class="user-profile">
@@ -67,14 +72,28 @@
           <option value="medicine">Medicine (Units)</option>
         </select>
       </div>
+      <div class="filter-item">
+        <label for="disruptionFilter">Peacock Disruption:</label>
+        <select id="disruptionFilter" class="select-control">
+          <option value="none">None (Baseline Burn)</option>
+          <option value="minor">Minor (+25% Spoilage)</option>
+          <option value="major" selected>Major (+60% Spoilage)</option>
+        </select>
+      </div>
     </div>
 
-    <div class="filter-item">
-      <label class="toggle-switch">
-        <input type="checkbox" id="calibrationToggle" checked>
-        <span class="toggle-slider"></span>
-        <span>Calibrate Drone Sensor Offset</span>
-      </label>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <div class="filter-item">
+        <label class="toggle-switch">
+          <input type="checkbox" id="calibrationToggle" checked>
+          <span class="toggle-slider"></span>
+          <span>Calibrate Drone Sensor Offset</span>
+        </label>
+      </div>
+      <button id="btnExportCsv" class="btn-primary" style="padding: 8px 16px; font-size: 0.85rem;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export Courier Dispatch CSV
+      </button>
     </div>
   </div>
 
@@ -154,7 +173,7 @@
 
     <div class="pods-grid">
       {% for pod in summary.pods %}
-        <div class="flat-card">
+        <div class="flat-card pod-card" data-pod-id="{{ pod.pod_id }}">
           <div class="pod-card-header">
             <div>
               <div class="pod-name">{{ pod.pod_name }}</div>
@@ -164,33 +183,33 @@
           </div>
 
           <div class="runway-meters">
-            <div class="runway-row">
+            <div class="runway-row" data-resource="water">
               <div class="runway-label">
                 <span>Water Runway</span>
-                <span class="mono">{{ pod.water_runway_days|floatformat:1 }} days ({{ pod.water_stock_l|floatformat:0 }} L)</span>
+                <span class="mono runway-text-water-{{ pod.pod_id|slugify }}">{{ pod.water_runway_days|floatformat:1 }} days ({{ pod.water_stock_l|floatformat:0 }} L)</span>
               </div>
               <div class="progress-bar-bg">
-                <div class="progress-bar-fill {% if pod.water_runway_days > 10 %}fill-emerald{% elif pod.water_runway_days > 5 %}fill-amber{% else %}fill-rose{% endif %}" style="width: {% if pod.water_runway_days > 30 %}100{% else %}{{ pod.water_runway_days|add:0|floatformat:0 }}{% endif %}%;"></div>
+                <div class="progress-bar-fill runway-bar-water-{{ pod.pod_id|slugify }} {% if pod.water_runway_days > 10 %}fill-emerald{% elif pod.water_runway_days > 5 %}fill-amber{% else %}fill-rose{% endif %}" style="width: {% if pod.water_runway_days > 30 %}100{% else %}{{ pod.water_runway_days|add:0|floatformat:0 }}{% endif %}%;"></div>
               </div>
             </div>
 
-            <div class="runway-row">
+            <div class="runway-row" data-resource="food">
               <div class="runway-label">
                 <span>Food Runway</span>
-                <span class="mono">{{ pod.food_runway_days|floatformat:1 }} days ({{ pod.food_stock_kg|floatformat:0 }} kg)</span>
+                <span class="mono runway-text-food-{{ pod.pod_id|slugify }}">{{ pod.food_runway_days|floatformat:1 }} days ({{ pod.food_stock_kg|floatformat:0 }} kg)</span>
               </div>
               <div class="progress-bar-bg">
-                <div class="progress-bar-fill {% if pod.food_runway_days > 10 %}fill-emerald{% elif pod.food_runway_days > 5 %}fill-amber{% else %}fill-rose{% endif %}" style="width: {% if pod.food_runway_days > 30 %}100{% else %}{{ pod.food_runway_days|add:0|floatformat:0 }}{% endif %}%;"></div>
+                <div class="progress-bar-fill runway-bar-food-{{ pod.pod_id|slugify }} {% if pod.food_runway_days > 10 %}fill-emerald{% elif pod.food_runway_days > 5 %}fill-amber{% else %}fill-rose{% endif %}" style="width: {% if pod.food_runway_days > 30 %}100{% else %}{{ pod.food_runway_days|add:0|floatformat:0 }}{% endif %}%;"></div>
               </div>
             </div>
 
-            <div class="runway-row">
+            <div class="runway-row" data-resource="medicine">
               <div class="runway-label">
                 <span>Medicine Runway</span>
-                <span class="mono">{{ pod.medicine_runway_days|floatformat:1 }} days ({{ pod.medicine_stock_units|floatformat:0 }} units)</span>
+                <span class="mono runway-text-medicine-{{ pod.pod_id|slugify }}">{{ pod.medicine_runway_days|floatformat:1 }} days ({{ pod.medicine_stock_units|floatformat:0 }} units)</span>
               </div>
               <div class="progress-bar-bg">
-                <div class="progress-bar-fill {% if pod.medicine_runway_days > 10 %}fill-emerald{% elif pod.medicine_runway_days > 5 %}fill-amber{% else %}fill-rose{% endif %}" style="width: {% if pod.medicine_runway_days > 30 %}100{% else %}{{ pod.medicine_runway_days|add:0|floatformat:0 }}{% endif %}%;"></div>
+                <div class="progress-bar-fill runway-bar-medicine-{{ pod.pod_id|slugify }} {% if pod.medicine_runway_days > 10 %}fill-emerald{% elif pod.medicine_runway_days > 5 %}fill-amber{% else %}fill-rose{% endif %}" style="width: {% if pod.medicine_runway_days > 30 %}100{% else %}{{ pod.medicine_runway_days|add:0|floatformat:0 }}{% endif %}%;"></div>
               </div>
             </div>
           </div>
@@ -238,7 +257,7 @@
         <div class="chart-header">
           <div class="chart-title">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-rose);"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            Fair Priority vs Naive Ranking (Reed's End Pod 4)
+            Fair Priority vs Naive Ranking (Dynamic Pod Selection)
           </div>
         </div>
         <div class="chart-canvas-container">
@@ -272,6 +291,37 @@
         </p>
       </div>
 
+      <!-- Interactive Allocation Simulator Panel -->
+      <div style="background: rgba(19,25,38,0.7); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div>
+            <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin: 0;">⚡ Dynamic Fair Allocation Simulator</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Adjust available resource pool amounts to simulate allocations in real-time.</span>
+          </div>
+          <button id="btnRunSimulation" class="btn-primary" style="padding: 8px 18px; font-size: 0.85rem;">Run Simulation</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <label style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 4px;">Water Pool (Litres):</label>
+            <input type="number" id="simWater" value="6500" class="select-control" style="width: 100%;">
+          </div>
+          <div>
+            <label style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 4px;">Food Pool (Kg):</label>
+            <input type="number" id="simFood" value="1000" class="select-control" style="width: 100%;">
+          </div>
+          <div>
+            <label style="font-size: 0.78rem; color: var(--text-secondary); font-weight: 600; display: block; margin-bottom: 4px;">Medicine Pool (Units):</label>
+            <input type="number" id="simMedicine" value="500" class="select-control" style="width: 100%;">
+          </div>
+        </div>
+
+        <!-- Simulation Results Output Container -->
+        <div id="simResultsOutput" style="display: none; background: rgba(0,0,0,0.25); border: 1px dashed rgba(6,182,212,0.3); border-radius: 6px; padding: 1rem; margin-top: 1rem;">
+          <!-- Dynamically populated via dashboard.js -->
+        </div>
+      </div>
+
       <div class="table-wrapper">
         <table class="custom-table">
           <thead>
@@ -296,29 +346,160 @@
     </div>
   </div>
 
-  <!-- Tab 4: Scout Logs -->
-  <div id="tab-logs" class="tab-pane">
+
+
+  <!-- Tab 5: Inter-Pod Resource Marketplace & Currency System -->
+  <div id="tab-marketplace" class="tab-pane">
     <div class="section-header">
-      <span class="flat-eyebrow">FIELD INTELLIGENCE</span>
-      <h2 class="section-title">Pip's Scout Logs & Courier Notes</h2>
+      <span class="flat-eyebrow">LOCAL ECONOMY</span>
+      <h2 class="section-title">Matilda Bay Inter-Pod Marketplace & Wallets</h2>
+      <p style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.25rem;">
+        Empowering pods to trade surplus resources using <strong>Bay Credits (🦪 BC)</strong> or direct resource swaps.
+      </p>
     </div>
 
-    <div class="scout-logs-grid">
-      {% for entry in scout_logs %}
-        <div class="flat-card log-card">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-            <span class="badge" style="background: rgba(6,182,212,0.12); color: var(--accent-cyan); border: 1px solid rgba(6,182,212,0.3);">{{ entry.category }}</span>
-            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">{{ entry.pod_association }}</span>
-          </div>
-          <div class="log-title">{{ entry.title }}</div>
-          <div class="log-body">{{ entry.content|linebreaksbr }}</div>
-          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.85rem;">
-            {% for tag in entry.tags %}
-              <span style="font-size: 0.72rem; font-family: monospace; background: rgba(255,255,255,0.05); color: var(--accent-amber); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(245,158,11,0.2);">{{ tag }}</span>
-            {% endfor %}
+    <!-- Pod Trading Accounts / Wallets Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+      {% for w in summary.marketplace.wallets %}
+        <div class="flat-card" style="border-left: 4px solid var(--accent-cyan);">
+          <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">{{ w.pod_id }} TRADING ACCOUNT</div>
+          <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-primary); margin: 4px 0;">{{ w.pod_name }}</div>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 8px;">
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Credit Balance:</span>
+            <span class="mono" style="font-size: 1.15rem; font-weight: 800; color: var(--accent-amber);">🦪 {{ w.credit_balance|floatformat:1 }} BC</span>
           </div>
         </div>
       {% endfor %}
+    </div>
+
+    <!-- Order Book & Actions Grid -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.25rem;">
+      <!-- Left Column: Open Trade Offers Order Book -->
+      <div class="flat-card">
+        <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-top: 0;">📖 Open Inter-Pod Trade Offers</h3>
+        <div class="table-wrapper">
+          <table class="custom-table" id="tableOrderBook">
+            <thead>
+              <tr>
+                <th>Offer ID</th>
+                <th>Seller Pod</th>
+                <th>Offering</th>
+                <th>Price (BC)</th>
+                <th>Wanted Swap</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for offer in summary.marketplace.open_offers %}
+                <tr>
+                  <td class="mono">#{{ offer.id }}</td>
+                  <td style="font-weight: 700; color: var(--text-primary);">{{ offer.seller_pod__pod_name }}</td>
+                  <td><span class="badge" style="background: rgba(16,185,129,0.15); color: var(--accent-emerald);">{{ offer.amount_offered }} {{ offer.resource_offered }}</span></td>
+                  <td class="mono" style="color: var(--accent-amber); font-weight: 800;">🦪 {{ offer.price_in_credits }} BC</td>
+                  <td>{% if offer.wanted_resource %}{{ offer.wanted_amount }} {{ offer.wanted_resource }}{% else %}<span style="color: var(--text-muted);">Credit Only</span>{% endif %}</td>
+                  <td style="display: flex; gap: 6px; align-items: center;">
+                    <select class="select-control trade-buyer-pod" style="font-size: 0.75rem; padding: 4px; border-radius: 4px; background: rgba(148,163,184,0.1); border: 1px solid rgba(148,163,184,0.2); color: var(--text-primary);">
+                      <option value="Pod 1">Pod 1</option>
+                      <option value="Pod 2">Pod 2</option>
+                      <option value="Pod 3">Pod 3</option>
+                      <option value="Pod 4">Pod 4</option>
+                    </select>
+                    <button class="btn-primary btn-execute-trade" data-offer-id="{{ offer.id }}" style="padding: 4px 10px; font-size: 0.75rem;">Buy Offer</button>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right Column: Create Offer & Subsidy Control -->
+      <div>
+        <!-- Create Trade Offer Form -->
+        <div class="flat-card" style="margin-bottom: 1rem;">
+          <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-top: 0;">➕ Create New Trade Offer</h3>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div>
+              <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Selling Pod:</label>
+              <select id="tradeSellerPod" class="select-control" style="width: 100%;">
+                <option value="Pod 1">Pod 1 — Kestrel (Water Ops)</option>
+                <option value="Pod 2">Pod 2 — Marrow (Medical Hub)</option>
+                <option value="Pod 3">Pod 3 — Tallowfen (Food Store)</option>
+                <option value="Pod 4">Pod 4 — Reed's End (Remote Pod)</option>
+              </select>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div>
+                <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Resource:</label>
+                <select id="tradeResource" class="select-control" style="width: 100%;">
+                  <option value="water">Water</option>
+                  <option value="food">Food</option>
+                  <option value="medicine">Medicine</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Amount:</label>
+                <input type="number" id="tradeAmount" value="500" class="select-control" style="width: 100%;">
+              </div>
+            </div>
+            <div>
+              <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Price (Bay Credits BC):</label>
+              <input type="number" id="tradePrice" value="300" class="select-control" style="width: 100%;">
+            </div>
+            <button id="btnCreateOffer" class="btn-primary" style="width: 100%; font-size: 0.85rem; padding: 8px;">Post Offer to Market</button>
+          </div>
+        </div>
+
+        <!-- Central Council Subsidy Grant -->
+        <div class="flat-card">
+          <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--accent-cyan); margin-top: 0;">🏛️ Council Subsidy Grant</h3>
+          <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 8px;">Inject stimulus credits directly into vulnerable pods like Reed's End.</span>
+          <div style="display: flex; gap: 8px;">
+            <select id="subsidyPod" class="select-control" style="flex: 1;">
+              <option value="Pod 4">Pod 4 — Reed's End</option>
+              <option value="Pod 2">Pod 2 — Marrow</option>
+              <option value="Pod 1">Pod 1 — Kestrel</option>
+            </select>
+            <input type="number" id="subsidyAmount" value="500" class="select-control" style="width: 80px;">
+          </div>
+          <button id="btnGrantSubsidy" class="btn-primary" style="background: var(--accent-cyan); color: #090d16; font-weight: 700; width: 100%; margin-top: 8px; font-size: 0.82rem; padding: 7px;">Grant Subsidy Credits</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Completed Transactions Ledger -->
+    <div class="flat-card" style="margin-top: 1.25rem;">
+      <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-top: 0;">📜 Public Transaction History Ledger</h3>
+      <div class="table-wrapper">
+        <table class="custom-table" id="tableTransactions">
+          <thead>
+            <tr>
+              <th>Tx ID</th>
+              <th>Buyer Pod</th>
+              <th>Seller Pod</th>
+              <th>Resource Transferred</th>
+              <th>Amount</th>
+              <th>Price Paid</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for tx in summary.marketplace.recent_transactions %}
+              <tr>
+                <td class="mono">#{{ tx.id }}</td>
+                <td style="font-weight: 700; color: var(--accent-cyan);">{{ tx.buyer_pod__pod_id }}</td>
+                <td style="font-weight: 700; color: var(--accent-emerald);">{{ tx.seller_pod__pod_id }}</td>
+                <td><span class="badge">{{ tx.resource_type }}</span></td>
+                <td class="mono">{{ tx.amount }}</td>
+                <td class="mono" style="color: var(--accent-amber); font-weight: 800;">🦪 {{ tx.price_paid }} BC</td>
+                <td style="font-size: 0.75rem; color: var(--text-muted);">{{ tx.transaction_date }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No completed trade transactions yet. Execute an offer above to trade!</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </main>

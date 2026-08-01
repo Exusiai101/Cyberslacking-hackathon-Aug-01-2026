@@ -73,36 +73,36 @@ Based on exploratory analysis and courier field notes, the solution framework mu
 ---
 
 ### Phase 2: Core Algorithmic Engine & API Services
-- [ ] **Min-Heap Bottleneck Priority Service**:
+- [x] **Min-Heap Bottleneck Priority Service**:
   - Port priority algorithms from [`pod_fixed.py`](file:///home/scout/Desktop/Cyberslacking-hackathon-Aug-01-2026/Matilda%20Bay/Matilday%20Bay/pod_fixed.py#L81-L114) into a Django service function `get_pod_rankings()`.
   - Rank pods based on worst-case single resource shortfall ($\min(\text{netWater}, \text{netFood}, \text{netMedicine})$).
-- [ ] **Fair Allocation Simulator Endpoint**:
+- [x] **Fair Allocation Simulator Endpoint**:
   - Create a new API route `/api/simulate-allocation/` in [`core/views.py`](file:///home/scout/Desktop/Cyberslacking-hackathon-Aug-01-2026/matildabay/core/views.py) accepting available resource pool inputs and returning comparative allocation outputs (Naive vs. Fair Priority).
-- [ ] **Predictive Crisis Forecaster**:
+- [x] **Predictive Crisis Forecaster**:
   - Implement runway forecasting considering peacock disruption levels (`none`, `minor`, `major`) and flag pods hitting $< 3$ days runway.
 
 ---
 
 ### Phase 3: Frontend Visualization & Interactive Simulator
-- [ ] **Interactive Allocation Simulator Widget**:
+- [x] **Interactive Allocation Simulator Widget**:
   - Build an interactive control panel in [`templates/dashboard.html`](file:///home/scout/Desktop/Cyberslacking-hackathon-Aug-01-2026/matildabay/templates/dashboard.html) allowing users to adjust resource pools and compare Naive vs. Fair allocations side-by-side.
-- [ ] **Silent Need Alert Banner**:
+- [x] **Silent Need Alert Banner**:
   - Add a persistent alert component in the dashboard surfacing silent pods (e.g. Reed's End) that require proactive intervention.
-- [ ] **Enhanced Chart.js Visualizations**:
+- [x] **Enhanced Chart.js Visualizations**:
   - Expand [`static/js/dashboard.js`](file:///home/scout/Desktop/Cyberslacking-hackathon-Aug-01-2026/matildabay/static/js/dashboard.js) to include:
     1. Historical Stock Depletion & Projected Runway line chart.
     2. Council Meeting Unmet Needs breakdown bar chart.
     3. Delivery Efficiency & Resource Mismatch radar chart.
-- [ ] **Courier Dispatch Export**:
+- [x] **Courier Dispatch Export**:
   - Add a button on the dashboard to export optimized delivery recommendations as CSV/PDF.
 
 ---
 
 ### Phase 4: Authentication, Verification & Testing
-- [ ] **Verification & Test Suite**:
+- [x] **Verification & Test Suite**:
   - Add unit tests in [`core/tests.py`](file:///home/scout/Desktop/Cyberslacking-hackathon-Aug-01-2026/matildabay/core/tests.py) testing calibration math, missing value imputation, and min-heap ordering.
   - Verify auth flows (`demo_user` / `password123`) and API response schemas.
-- [ ] **UI Polish & Dark-Mode Theme**:
+- [x] **UI Polish & Dark-Mode Theme**:
   - Ensure status badges (`critical`, `warning`, `stable`) conform to accessible, high-contrast dark mode styling in [`static/css/styles.css`](file:///home/scout/Desktop/Cyberslacking-hackathon-Aug-01-2026/matildabay/static/css/styles.css).
 
 ---
@@ -134,17 +134,17 @@ Instead of relying solely on top-down council allocations, pods can engage in **
 
 ### Phase 5: Inter-Pod Trading & Currency Implementation (Django)
 
-- [ ] **Django Database Models (`core/models.py`)**:
+- [x] **Django Database Models (`core/models.py`)**:
   - `PodWallet`: Tracks `pod_id`, `credit_balance` (🦪 BC), and `escrow_balance`.
   - `TradeOffer`: Tracks `offering_pod`, `resource_offered` (`water`, `food`, `medicine`), `amount_offered`, `price_in_credits` or `wanted_resource`, `wanted_amount`, and `status` (`open`, `completed`, `cancelled`).
   - `TradeTransaction`: Records completed trades, timestamps, and delivery dispatch triggers.
 
-- [ ] **Marketplace & Trading API (`core/views.py` & `core/urls.py`)**:
+- [x] **Marketplace & Trading API (`core/views.py` & `core/urls.py`)**:
   - `GET /api/marketplace/`: List active trade offers and current exchange rates based on supply/demand.
   - `POST /api/trade/create/`: Allow pods to list surplus resources for sale/barter.
   - `POST /api/trade/execute/`: Execute a transaction, transferring credits and triggering courier delivery tasking.
 
-- [ ] **Marketplace UI & Trading Terminal (`dashboard.html` & `dashboard.js`)**:
+- [x] **Marketplace UI & Trading Terminal (`dashboard.html` & `dashboard.js`)**:
   - Add a **"Matilda Bay Marketplace"** tab to the dashboard displaying:
     1. **Pod Credit Balances & Treasury**.
     2. **Active Order Book / Trade Offers**.

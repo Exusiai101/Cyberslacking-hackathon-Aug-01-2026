@@ -1,0 +1,5 @@
+Pod ID,Pod Name,Population,Distance (km),Overall Status,Bottleneck Resource,Water Runway (Days),Food Runway (Days),Medicine Runway (Days),Recommended Action
+"Pod 1","Orca Pod 1",120,3.2,"failed","Water",3.4,0,50.4,"PRIORITY EMERGENCY DISPATCH"
+"Pod 2","Orca Pod 2",90,5.8,"failed","Water",0,19,1312.5,"PRIORITY EMERGENCY DISPATCH"
+"Pod 3","Orca Pod 3",150,4,"warning","Water",7.2,375.6,278.1,"Standard Delivery"
+"Pod 4","Orca Pod 4",55,11.5,"failed","Water",0,40,23.1,"PRIORITY EMERGENCY DISPATCH"
