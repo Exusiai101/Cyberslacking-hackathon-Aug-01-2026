@@ -62,13 +62,13 @@ Based on exploratory analysis and courier field notes, the solution framework mu
 ```
 
 ### Phase 1: Data Pipeline & Preprocessing
-- [ ] **Empirical Drone Sensor Calibration**:
-  - Update [`calculate_drone_offset()`](file:///home/scout/Desktop/Cyberslacking-hackathon-Aug-01-2026/matildabay/core/data_service.py#L108-L124) in [`core/data_service.py`](file:///home/scout/Desktop/Cyberslacking-hackathon-Aug-01-2026/matildabay/core/data_service.py) to dynamically calculate offset per resource (`water`, `food`, `medicine`) between adjacent drone vs. elder reports.
+- [x] **Empirical Drone Sensor Calibration**:
+  - Update [`calculate_drone_offset()`](file:///home/scout/Desktop/Cyberslacking-hackathon-Aug-01-2026/matildabay/core/data_service.py) in [`core/data_service.py`](file:///home/scout/Desktop/Cyberslacking-hackathon-Aug-01-2026/matildabay/core/data_service.py) to dynamically calculate offset per resource (`water`, `food`, `medicine`) between adjacent drone vs. elder reports.
   - Automatically apply calibration adjustments to stock levels when `report_source == 'scout_drone_scan'`.
-- [ ] **Data Imputation & Telemetry Smoothing**:
+- [x] **Data Imputation & Telemetry Smoothing**:
   - Handle missing data entries (`NaN`) for distant pods using 7-day rolling window averages instead of zero-filling.
-- [ ] **Structured Scout Log Tagging**:
-  - Parse log entries in [`load_scout_logs()`](file:///home/scout/Desktop/Cyberslacking-hackathon-Aug-01-2026/matildabay/core/data_service.py#L86-L106) with metadata tags (`#SilentPod`, `#DroneBias`, `#Bottleneck`) for UI banner highlights.
+- [x] **Structured Scout Log Tagging**:
+  - Parse log entries in [`load_scout_logs()`](file:///home/scout/Desktop/Cyberslacking-hackathon-Aug-01-2026/matildabay/core/data_service.py) with metadata tags (`#SilentPod`, `#DroneBias`, `#Bottleneck`) for UI banner highlights.
 
 ---
 
