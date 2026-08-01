@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block body_content %}
+<!-- Flat Navbar -->
+<header class="navbar">
+  <a href="{% url 'home' %}" class="brand">
+    <div class="brand-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
+      </svg>
+    </div>
+    <span class="brand-title">Matilda Bay Ops <span class="version-badge">v2.6 LIVE</span></span>
+  </a>
+
+  <nav class="nav-tabs">
+    <a href="{% url 'home' %}?tab=overview" class="nav-tab-btn" style="text-decoration: none;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Overview
+    </a>
+    <a href="{% url 'home' %}?tab=visualization" class="nav-tab-btn" style="text-decoration: none;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Data Visualizations
+    </a>
+    <a href="{% url 'home' %}?tab=council" class="nav-tab-btn" style="text-decoration: none;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Council Allocations
+    </a>
+    <a href="{% url 'home' %}?tab=marketplace" class="nav-tab-btn" style="text-decoration: none;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 6v12"/></svg>
+      Marketplace & Wallets
+    </a>
+    <a href="{% url 'forecasting' %}" class="nav-tab-btn active" style="text-decoration: none;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      ML Forecasting Model
+    </a>
+  </nav>
+
+  <div class="user-profile">
+    <div class="user-badge">
+      <div class="user-avatar">{{ username|slice:":1"|upper }}</div>
+      <span>{{ username }}</span>
+    </div>
+    <a href="{% url 'logout' %}" class="btn-logout">Sign Out</a>
+  </div>
+</header>
+
+<main class="container" style="padding-top: 2rem;">
+  <div class="section-header">
+    <span class="flat-eyebrow">PREDICTIVE ANALYTICS</span>
+    <h2 class="section-title">Machine Learning Resource Runway Forecast</h2>
+    <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 0.5rem; max-width: 800px;">
+      Powered by a Random Forest Regression model trained on population density, consumption rates, distance from hubs, and live stock data. These 4 models predict the <strong>Runway Days</strong> remaining for each pod across 1-day, 7-day, and 30-day horizons.
+    </p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 2rem;">
+    {% for pod in forecasts %}
+      <div class="flat-card" style="border-left: 4px solid {% if pod.pod_id == 'Pod 4' %}var(--accent-rose){% elif pod.pod_id == 'Pod 1' %}var(--accent-cyan){% elif pod.pod_id == 'Pod 2' %}#3b82f6{% else %}var(--accent-emerald){% endif %};">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+          <div>
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin: 0;">{{ pod.pod_name }}</h3>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Population: {{ pod.population }}</span>
+          </div>
+          <div class="badge" style="background: rgba(139, 92, 246, 0.15); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.3);">Model Active</div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+          {% for res_key, res_data in pod.predictions.items %}
+            <div style="background: rgba(19, 25, 38, 0.5); padding: 1.25rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+              <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1rem 0; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px;">
+                {% if res_key == 'water' %}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg> Water Forecast
+                {% elif res_key == 'food' %}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" stroke-width="2"><path d="M2 22l6-6M2 2l6 6M22 2l-6 6M22 22l-6-6"/><path d="M12 18v4M12 2v4M6 12H2M22 12h-4"/></svg> Food Forecast
+                {% else %}
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-amber)" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Medicine Forecast
+                {% endif %}
+              </h4>
+              
+              <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                  <span style="font-size: 0.85rem; color: var(--text-secondary);">Next Day (T+1):</span>
+                  <span class="mono" style="font-weight: 700; color: {% if res_data.next_day < 3 %}var(--accent-rose){% elif res_data.next_day < 7 %}var(--accent-amber){% else %}var(--accent-emerald){% endif %};">{{ res_data.next_day }} Days</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                  <span style="font-size: 0.85rem; color: var(--text-secondary);">Next Week (T+7):</span>
+                  <span class="mono" style="font-weight: 700; color: {% if res_data.next_week < 3 %}var(--accent-rose){% elif res_data.next_week < 7 %}var(--accent-amber){% else %}var(--accent-emerald){% endif %};">{{ res_data.next_week }} Days</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                  <span style="font-size: 0.85rem; color: var(--text-secondary);">Next Month (T+30):</span>
+                  <span class="mono" style="font-weight: 700; color: {% if res_data.next_month < 3 %}var(--accent-rose){% elif res_data.next_month < 7 %}var(--accent-amber){% else %}var(--accent-emerald){% endif %};">{{ res_data.next_month }} Days</span>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</main>
+{% endblock %}

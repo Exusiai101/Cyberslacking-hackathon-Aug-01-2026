@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", function() {
   tabBtns.forEach(btn => {
     btn.addEventListener("click", () => {
       const targetTab = btn.getAttribute("data-tab");
+      if (!targetTab) return; // Allow normal link navigation
       
       tabBtns.forEach(b => b.classList.remove("active"));
       tabPanes.forEach(p => p.classList.remove("active"));
@@ -36,30 +37,53 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   });
 
-  // Fetch Data from Django API
-  fetch("/api/data/")
+  // Handle cross-page tab routing via URL parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const requestedTab = urlParams.get('tab');
+  if (requestedTab) {
+    const targetBtn = document.querySelector(`.nav-tab-btn[data-tab="${requestedTab}"]`);
+    if (targetBtn) {
+      targetBtn.click();
+      // Remove param from URL cleanly
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }
+
+  // Initial Fetch & Setup
+  fetch("/api/data/?calibrate=true")
     .then(response => response.json())
     .then(data => {
       if (data.status === "success") {
         fullData = data;
-        initDashboard(data);
+        setupFilters();
+        renderCharts();
       }
     })
     .catch(err => console.error("Error loading Matilda Bay datasets:", err));
 
-  function initDashboard(data) {
-    setupFilters();
-    renderCharts();
+  function fetchDashboardData() {
+    const isCalibrated = document.getElementById("calibrationToggle") ? document.getElementById("calibrationToggle").checked : true;
+    fetch(`/api/data/?calibrate=${isCalibrated}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === "success") {
+          fullData = data;
+          renderCharts();
+        }
+      })
+      .catch(err => console.error("Error reloading data:", err));
   }
 
   function setupFilters() {
     const podSelect = document.getElementById("podFilter");
     const resourceSelect = document.getElementById("resourceFilter");
     const calibrationToggle = document.getElementById("calibrationToggle");
+    const disruptionSelect = document.getElementById("disruptionFilter");
 
     if (podSelect) podSelect.addEventListener("change", renderCharts);
     if (resourceSelect) resourceSelect.addEventListener("change", renderCharts);
-    if (calibrationToggle) calibrationToggle.addEventListener("change", renderCharts);
+    if (calibrationToggle) calibrationToggle.addEventListener("change", fetchDashboardData);
+    if (disruptionSelect) disruptionSelect.addEventListener("change", renderCharts);
   }
 
   function renderCharts() {
@@ -77,10 +101,73 @@ document.addEventListener("DOMContentLoaded", function() {
       councilRecords = councilRecords.filter(r => r.pod_id === selectedPod);
     }
 
+    const selectedDisruption = document.getElementById("disruptionFilter") ? document.getElementById("disruptionFilter").value : "major";
+
     renderStockChart(supplyRecords, selectedResource, isCalibrated);
     renderDisruptionChart(supplyRecords);
-    renderCouncilChart(councilRecords);
+    renderCouncilChart(fullData.council_records, selectedPod);
     renderCalibrationChart(fullData.supply_records);
+    renderOverview(selectedPod, selectedResource, selectedDisruption);
+  }
+
+  function renderOverview(selectedPod, selectedResource, selectedDisruption) {
+    // 1. Pod & Resource HTML DOM filtering
+    document.querySelectorAll('.pods-grid .pod-card').forEach(card => {
+      if (selectedPod === "all" || card.getAttribute("data-pod-id") === selectedPod) {
+        card.style.display = "block";
+      } else {
+        card.style.display = "none";
+      }
+    });
+
+    document.querySelectorAll('.runway-row').forEach(row => {
+      if (selectedResource === "all" || row.getAttribute("data-resource") === selectedResource) {
+        row.style.display = "flex";
+      } else {
+        row.style.display = "none";
+      }
+    });
+
+    // 2. Peacock Disruption Fetching & DOM Updating
+    fetch(`/api/forecast/?disruption=${selectedDisruption}&days=7`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.status === "success" && d.forecasts) {
+          d.forecasts.forEach(f => {
+            const safePodId = f.pod_id.replace(/\s+/g, '-').toLowerCase();
+            const wDays = f.projected_water_runway;
+            const fDays = f.projected_food_runway;
+            const mDays = f.projected_medicine_runway;
+
+            // Water
+            const wText = document.querySelector(`.runway-text-water-${safePodId}`);
+            const wBar = document.querySelector(`.runway-bar-water-${safePodId}`);
+            if (wText) wText.innerHTML = `${wDays.toFixed(1)} days`;
+            if (wBar) {
+              wBar.style.width = `${Math.min(wDays, 100)}%`;
+              wBar.className = `progress-bar-fill runway-bar-water-${safePodId} ` + (wDays > 10 ? 'fill-emerald' : wDays > 5 ? 'fill-amber' : 'fill-rose');
+            }
+
+            // Food
+            const fText = document.querySelector(`.runway-text-food-${safePodId}`);
+            const fBar = document.querySelector(`.runway-bar-food-${safePodId}`);
+            if (fText) fText.innerHTML = `${fDays.toFixed(1)} days`;
+            if (fBar) {
+              fBar.style.width = `${Math.min(fDays, 100)}%`;
+              fBar.className = `progress-bar-fill runway-bar-food-${safePodId} ` + (fDays > 10 ? 'fill-emerald' : fDays > 5 ? 'fill-amber' : 'fill-rose');
+            }
+
+            // Medicine
+            const mText = document.querySelector(`.runway-text-medicine-${safePodId}`);
+            const mBar = document.querySelector(`.runway-bar-medicine-${safePodId}`);
+            if (mText) mText.innerHTML = `${mDays.toFixed(1)} days`;
+            if (mBar) {
+              mBar.style.width = `${Math.min(mDays, 100)}%`;
+              mBar.className = `progress-bar-fill runway-bar-medicine-${safePodId} ` + (mDays > 10 ? 'fill-emerald' : mDays > 5 ? 'fill-amber' : 'fill-rose');
+            }
+          });
+        }
+      });
   }
 
   // 1. Stock & Runway Time-Series Chart
@@ -235,32 +322,46 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   // 3. Council Allocation Fairness (Naive vs Fair Priority)
-  function renderCouncilChart(records) {
+  function renderCouncilChart(records, selectedPod) {
     const ctx = document.getElementById("chartCouncilCanvas");
     if (!ctx) return;
 
-    const pod4Records = records.filter(r => r.pod_id === "Pod 4");
-    const naiveRanks = pod4Records.map(r => r.naive_priority_rank);
-    const fairRanks = pod4Records.map(r => r.fair_priority_rank);
+    let targetPod = selectedPod === "all" ? "Pod 4" : selectedPod;
+    const podRecords = records.filter(r => r.pod_id === targetPod);
+    
+    // If we filtered out the target pod (e.g. they selected a pod but the records don't match, though they should)
+    if (podRecords.length === 0) {
+       if (chartCouncil) chartCouncil.destroy();
+       return;
+    }
+
+    const naiveRanks = podRecords.map(r => r.naive_priority_rank);
+    const fairRanks = podRecords.map(r => r.fair_priority_rank);
 
     if (chartCouncil) chartCouncil.destroy();
 
     chartCouncil = new Chart(ctx, {
-      type: "bar",
+      type: "line",
       data: {
-        labels: pod4Records.map(r => `Meeting #${r.event_id} (${r.event_date})`),
+        labels: podRecords.map(r => `Meeting #${r.event_id} (${r.event_date})`),
         datasets: [
           {
-            label: "Reed's End (Pod 4) Fair Need Rank (1=Highest)",
+            label: `${targetPod} Fair Need Rank`,
             data: fairRanks,
+            borderColor: "#10b981",
             backgroundColor: "#10b981",
-            borderRadius: 2,
+            borderWidth: 3,
+            tension: 0.1,
+            pointRadius: 5
           },
           {
-            label: "Reed's End (Pod 4) Naive Rank (Distance-based)",
+            label: `${targetPod} Naive Rank`,
             data: naiveRanks,
+            borderColor: "#f43f5e",
             backgroundColor: "#f43f5e",
-            borderRadius: 2,
+            borderWidth: 3,
+            tension: 0.1,
+            pointRadius: 5
           }
         ]
       },
@@ -277,8 +378,8 @@ document.addEventListener("DOMContentLoaded", function() {
             title: { display: true, text: "Priority Rank (1 = Top Priority)", color: "#94a3b8" },
             reverse: true,
             ticks: { color: "#64748b", stepSize: 1 },
-            min: 1,
-            max: 4,
+            min: 0.5,
+            max: 4.5,
             grid: { color: "#182030" }
           }
         }
@@ -340,4 +441,190 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     });
   }
+
+  // 5. Interactive Allocation Simulator Event Handler
+  const btnRunSim = document.getElementById("btnRunSimulation");
+  if (btnRunSim) {
+    btnRunSim.addEventListener("click", runAllocationSimulation);
+  }
+
+  function runAllocationSimulation() {
+    const water = parseFloat(document.getElementById("simWater").value) || 6500;
+    const food = parseFloat(document.getElementById("simFood").value) || 1000;
+    const med = parseFloat(document.getElementById("simMedicine").value) || 500;
+
+    fetch("/api/simulate-allocation/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ water: water, food: food, medicine: med })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "success") {
+          renderSimulationResults(data.simulation);
+        }
+      })
+      .catch(err => console.error("Simulation error:", err));
+  }
+
+  function renderSimulationResults(simData) {
+    const output = document.getElementById("simResultsOutput");
+    if (!output) return;
+
+    output.style.display = "block";
+    let html = `<h4 style="margin-top: 0; color: var(--accent-cyan); font-size: 0.95rem;">Simulation Results (Naive vs. Fair Allocation)</h4>`;
+    
+    Object.keys(simData).forEach(resource => {
+      const resData = simData[resource];
+      html += `
+        <div style="margin-bottom: 1rem;">
+          <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-primary); text-transform: uppercase; margin-bottom: 4px;">
+            Resource: ${resource} (Available Pool: ${resData.available_pool} | Total Need: ${resData.total_need})
+          </div>
+          <table class="custom-table" style="font-size: 0.8rem; margin-top: 4px;">
+            <thead>
+              <tr>
+                <th>Pod</th>
+                <th>Request Status</th>
+                <th>Estimated Need</th>
+                <th>Naive Rank (Allocated)</th>
+                <th>Fair Rank (Allocated)</th>
+                <th>Benefit Delta</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${resData.pods.map(p => `
+                <tr>
+                  <td><strong>${p.pod_name}</strong></td>
+                  <td>${p.request_submitted ? '<span style="color:var(--accent-emerald);">Submitted</span>' : '<span style="color:var(--accent-rose); font-weight:700;">Silent (No Request)</span>'}</td>
+                  <td class="mono">${p.estimated_true_need}</td>
+                  <td class="mono">#${p.naive_rank} (${p.naive_allocated})</td>
+                  <td class="mono" style="color:var(--accent-emerald); font-weight:700;">#${p.fair_rank} (${p.fair_allocated})</td>
+                  <td class="mono" style="color:${p.fair_benefit_delta > 0 ? 'var(--accent-emerald)' : 'var(--text-muted)'}; font-weight:700;">
+                    ${p.fair_benefit_delta > 0 ? '+' + p.fair_benefit_delta : p.fair_benefit_delta}
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    });
+
+    output.innerHTML = html;
+  }
+
+  // (Disruption event listener was moved to setupFilters and renderOverview)
+
+  // 7. Export Courier Dispatch CSV Handler
+  const btnExportCsv = document.getElementById("btnExportCsv");
+  if (btnExportCsv) {
+    btnExportCsv.addEventListener("click", exportCourierDispatchCsv);
+  }
+
+  function exportCourierDispatchCsv() {
+    if (!fullData || !fullData.summary || !fullData.summary.pods) return;
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Pod ID,Pod Name,Population,Distance (km),Overall Status,Bottleneck Resource,Water Runway (Days),Food Runway (Days),Medicine Runway (Days),Recommended Action\n";
+
+    fullData.summary.pods.forEach(pod => {
+      let recAction = "Standard Delivery";
+      if (pod.overall_status === "critical" || pod.overall_status === "failed") {
+        recAction = "PRIORITY EMERGENCY DISPATCH";
+      } else if (pod.requested_assistance === false && pod.distance_km > 10) {
+        recAction = "PROACTIVE SILENT NEED DISPATCH";
+      }
+
+      csvContent += `"${pod.pod_id}","${pod.pod_name}",${pod.population},${pod.distance_km},"${pod.overall_status}","Water",${pod.water_runway_days},${pod.food_runway_days},${pod.medicine_runway_days},"${recAction}"\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "matilda_bay_courier_dispatch.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // 8. Inter-Pod Marketplace Handlers
+  const btnCreateOffer = document.getElementById("btnCreateOffer");
+  if (btnCreateOffer) {
+    btnCreateOffer.addEventListener("click", function() {
+      const seller = document.getElementById("tradeSellerPod").value;
+      const resource = document.getElementById("tradeResource").value;
+      const amount = parseFloat(document.getElementById("tradeAmount").value) || 100;
+      const price = parseFloat(document.getElementById("tradePrice").value) || 50;
+
+      fetch("/api/trade/create/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          seller_pod_id: seller,
+          resource_offered: resource,
+          amount_offered: amount,
+          price_in_credits: price
+        })
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d.status === "success") {
+            alert(d.message);
+            window.location.replace("?tab=marketplace");
+          } else {
+            alert("Error: " + d.message);
+          }
+        });
+    });
+  }
+
+  const btnGrantSubsidy = document.getElementById("btnGrantSubsidy");
+  if (btnGrantSubsidy) {
+    btnGrantSubsidy.addEventListener("click", function() {
+      const podId = document.getElementById("subsidyPod").value;
+      const amount = parseFloat(document.getElementById("subsidyAmount").value) || 500;
+
+      fetch("/api/grant-subsidy/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pod_id: podId, subsidy_amount: amount })
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d.status === "success") {
+            alert(d.message);
+            window.location.replace("?tab=marketplace");
+          } else {
+            alert("Error: " + d.message);
+          }
+        });
+    });
+  }
+
+  document.addEventListener("click", function(e) {
+    if (e.target && e.target.classList.contains("btn-execute-trade")) {
+      const offerId = e.target.getAttribute("data-offer-id");
+      const buyerSelect = e.target.previousElementSibling;
+      const buyerPod = buyerSelect ? buyerSelect.value : null;
+      if (!buyerPod) return;
+
+      fetch("/api/trade/execute/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ buyer_pod_id: buyerPod, offer_id: offerId })
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d.status === "success") {
+            alert(d.message);
+            window.location.replace("?tab=marketplace");
+          } else {
+            alert("Error: " + d.message);
+          }
+        });
+    }
+  });
 });
+
+
