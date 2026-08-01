@@ -63,7 +63,7 @@ def logout_view(request):
 
 @login_required
 def home_view(request):
-    summary = get_dashboard_summary()
+    summary = get_dashboard_summary(apply_calibration=True)
     scout_logs = load_scout_logs()
     
     context = {
@@ -76,13 +76,18 @@ def home_view(request):
 @login_required
 def api_data_view(request):
     """JSON API providing structured datasets for dynamic frontend charts."""
-    supply_records = load_supply_data()
+    calibrate_param = request.GET.get("calibrate", "true").lower() == "true"
+    impute_param = request.GET.get("impute", "true").lower() == "true"
+
+    supply_records = load_supply_data(apply_calibration=calibrate_param, impute_missing=impute_param)
     council_records = load_council_data()
     scout_logs = load_scout_logs()
-    summary = get_dashboard_summary()
+    summary = get_dashboard_summary(apply_calibration=calibrate_param)
 
     return JsonResponse({
         "status": "success",
+        "calibration_active": calibrate_param,
+        "imputation_active": impute_param,
         "summary": summary,
         "supply_records": supply_records,
         "council_records": council_records,
