@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Matilda Bay Ops | Transparency Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500;700&amp;family=Hanken+Grotesk:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-on-surface": "#2f312e",
+                    "surface-tint": "#bac8dc",
+                    "surface-container-low": "#1a1c1a",
+                    "on-tertiary-fixed-variant": "#005235",
+                    "secondary-fixed-dim": "#a5d0b9",
+                    "on-secondary": "#0e3727",
+                    "surface-variant": "#333533",
+                    "secondary": "#a5d0b9",
+                    "primary": "#bac8dc",
+                    "on-tertiary-container": "#299468",
+                    "tertiary-container": "#001f12",
+                    "deep-navy": "#01080E",
+                    "surface-container-lowest": "#0c0f0d",
+                    "on-secondary-fixed": "#002114",
+                    "on-error": "#690005",
+                    "status-warning": "#FFB703",
+                    "surface-container-high": "#282b28",
+                    "telemetry-teal": "#2EC4B6",
+                    "surface-container-highest": "#333533",
+                    "error-container": "#93000a",
+                    "surface-dim": "#111412",
+                    "outline": "#8e9196",
+                    "outline-variant": "#44474c",
+                    "primary-container": "#0d1b2a",
+                    "surface-slate": "#1B263B",
+                    "on-surface-variant": "#c4c6cc",
+                    "secondary-container": "#29513f",
+                    "on-primary-fixed": "#0f1c2c",
+                    "primary-fixed-dim": "#bac8dc",
+                    "on-secondary-fixed-variant": "#274e3d",
+                    "on-tertiary": "#003823",
+                    "status-critical": "#E63946",
+                    "on-primary-fixed-variant": "#3a4859",
+                    "inverse-surface": "#e2e3df",
+                    "surface-bright": "#373a37",
+                    "secondary-fixed": "#c1ecd4",
+                    "tertiary-fixed": "#92f7c3",
+                    "tertiary": "#75daa8",
+                    "on-secondary-container": "#97c2ab",
+                    "background": "#111412",
+                    "on-tertiary-fixed": "#002113",
+                    "surface": "#111412",
+                    "on-surface": "#e2e3df",
+                    "on-primary": "#243141",
+                    "status-stable": "#2D6A4F",
+                    "on-primary-container": "#768497",
+                    "tertiary-fixed-dim": "#75daa8",
+                    "primary-fixed": "#d6e4f9",
+                    "inverse-primary": "#525f71",
+                    "on-error-container": "#ffdad6",
+                    "error": "#ffb4ab",
+                    "surface-container": "#1e201e",
+                    "on-background": "#e2e3df",
+                    "status-emergency": "#9B2226"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "margin-mobile": "16px",
+                    "gutter": "16px",
+                    "panel-gap": "24px",
+                    "margin-desktop": "32px"
+            },
+            "fontFamily": {
+                    "label-caps": ["JetBrains Mono"],
+                    "body-md": ["Inter"],
+                    "data-mono": ["JetBrains Mono"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "body-sm": ["Inter"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "label-caps": ["12px", {"lineHeight": "16px", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "data-mono": ["14px", {"lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #01080E; /* Deep Navy Base */
+            color: #e2e3df; /* On Surface */
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .status-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .6; }
+        }
+        .glass-panel {
+            background: rgba(27, 38, 59, 0.4);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(68, 71, 76, 0.3);
+        }
+        .zebra-row:nth-child(even) {
+            background-color: rgba(27, 38, 59, 0.2);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+<!-- Top Navigation Shell -->
+<header class="fixed top-0 w-full z-50 bg-deep-navy border-b border-outline-variant flex justify-between items-center h-16 px-margin-desktop w-full">
+<div class="flex items-center gap-8">
+<h1 class="font-headline-md text-headline-md font-bold text-primary tracking-tight">MATILDA BAY OPS</h1>
+<nav class="hidden md:flex gap-6">
+<a class="text-primary font-bold font-label-caps text-label-caps transition-colors" href="#">DASHBOARD</a>
+<a class="text-on-surface-variant hover:text-on-surface font-label-caps text-label-caps transition-colors" href="#">ALLOCATION</a>
+<a class="text-on-surface-variant hover:text-on-surface font-label-caps text-label-caps transition-colors" href="#">MARKETPLACE</a>
+<a class="text-on-surface-variant hover:text-on-surface font-label-caps text-label-caps transition-colors" href="#">TELEMETRY</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<input class="bg-surface-slate border-none rounded-lg px-4 py-1.5 text-body-sm w-64 focus:ring-1 focus:ring-primary" placeholder="Search Pods..." type="text"/>
+<span class="material-symbols-outlined absolute right-3 top-1.5 text-on-surface-variant text-body-md" data-icon="search">search</span>
+</div>
+<div class="flex gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors" data-icon="settings">settings</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors" data-icon="account_circle">account_circle</span>
+</div>
+</div>
+</header>
+<!-- Side Navigation Shell (Desktop) -->
+<aside class="fixed left-0 top-0 h-full w-64 z-40 bg-surface-container-lowest border-r border-outline-variant hidden md:flex flex-col pt-20 pb-4">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="hub">hub</span>
+</div>
+<div>
+<p class="font-headline-sm text-headline-sm text-primary font-bold">Pod Clusters</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant">Active Monitoring</p>
+</div>
+</div>
+<div class="flex-grow flex flex-col gap-1 px-4">
+<div class="bg-secondary-container text-on-secondary-container rounded-lg px-4 py-3 flex items-center gap-3 transition-all">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-caps text-label-caps">Dashboard</span>
+</div>
+<div class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-lg px-4 py-3 flex items-center gap-3 transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-label-caps text-label-caps">Allocation</span>
+</div>
+<div class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-lg px-4 py-3 flex items-center gap-3 transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="hub">hub</span>
+<span class="font-label-caps text-label-caps">Marketplace</span>
+</div>
+<div class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-lg px-4 py-3 flex items-center gap-3 transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="settings_input_component">settings_input_component</span>
+<span class="font-label-caps text-label-caps">Telemetry</span>
+</div>
+</div>
+<div class="mt-auto px-4 flex flex-col gap-1">
+<div class="text-on-surface-variant hover:text-on-surface px-4 py-3 flex items-center gap-3 transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="monitor_heart">monitor_heart</span>
+<span class="font-label-caps text-label-caps">System Health</span>
+</div>
+<div class="text-on-surface-variant hover:text-on-surface px-4 py-3 flex items-center gap-3 transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="help_center">help_center</span>
+<span class="font-label-caps text-label-caps">Support</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-grow md:ml-64 pt-20 p-margin-desktop bg-deep-navy overflow-y-auto">
+<!-- Crisis Banner -->
+<div class="mb-panel-gap bg-status-emergency border border-status-critical rounded-xl px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 status-pulse">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-white text-3xl" data-icon="error">error</span>
+<div>
+<h3 class="font-headline-md text-white font-extrabold uppercase tracking-widest">SILENT NEED ALERT: REED'S END (POD 4)</h3>
+<p class="text-white opacity-90 font-body-sm">Automated telemetry indicates non-verbal distress patterns and critical resource depletion below reporting threshold. Intervention recommended.</p>
+</div>
+</div>
+<button class="bg-white text-status-emergency font-bold px-6 py-2 rounded uppercase text-label-caps hover:bg-opacity-90 transition-all">Prioritize Resupply</button>
+</div>
+<!-- Metric Header Section -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter mb-panel-gap">
+<div class="glass-panel p-6 rounded-xl flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-2">TOTAL UNMET NEED</span>
+<span class="font-display-lg text-display-lg text-status-critical">14,208 <span class="text-headline-md opacity-50 font-data-mono">KG</span></span>
+<div class="flex items-center gap-2 mt-2 text-status-critical">
+<span class="material-symbols-outlined text-body-sm" data-icon="trending_up">trending_up</span>
+<span class="font-data-mono text-body-sm">+12% from last cycle</span>
+</div>
+</div>
+<div class="glass-panel p-6 rounded-xl flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-2">BAY CREDITS LIQUIDITY</span>
+<span class="font-display-lg text-display-lg text-primary">842.5K <span class="text-headline-md opacity-50">🦪</span></span>
+<div class="flex items-center gap-2 mt-2 text-status-stable">
+<span class="material-symbols-outlined text-body-sm" data-icon="check_circle">check_circle</span>
+<span class="font-data-mono text-body-sm">Reserve Stable</span>
+</div>
+</div>
+<div class="glass-panel p-6 rounded-xl flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-2">ACTIVE DRONE SWARMS</span>
+<span class="font-display-lg text-display-lg text-telemetry-teal">42</span>
+<div class="flex items-center gap-2 mt-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-body-sm" data-icon="flight">flight</span>
+<span class="font-data-mono text-body-sm">38 Operational / 4 Docked</span>
+</div>
+</div>
+<div class="glass-panel p-6 rounded-xl flex flex-col justify-center">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant">TELEMETRY CALIBRATION</span>
+<div class="flex items-center gap-2">
+<span class="text-xs font-label-caps text-on-surface-variant">RAW</span>
+<div class="w-10 h-5 bg-secondary-container rounded-full relative cursor-pointer" onclick="this.classList.toggle('bg-telemetry-teal')">
+<div class="absolute right-1 top-1 w-3 h-3 bg-white rounded-full"></div>
+</div>
+<span class="text-xs font-label-caps text-telemetry-teal">FAIR</span>
+</div>
+</div>
+<p class="text-body-sm text-on-surface-variant italic">Applying Fair-Priority ethical weights to incoming drone data.</p>
+</div>
+</div>
+<!-- Bento Grid Main Content -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-panel-gap">
+<!-- Real-time Pod Telemetry (Grid spans 2 cols) -->
+<div class="lg:col-span-2 glass-panel rounded-xl overflow-hidden flex flex-col">
+<div class="p-6 border-b border-outline-variant flex justify-between items-center">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="sensors">sensors</span>
+<h2 class="font-headline-md text-headline-md">Pod Fleet Status</h2>
+</div>
+<div class="flex gap-4">
+<span class="flex items-center gap-2 text-status-stable font-label-caps text-xs">
+<div class="w-2 h-2 rounded-full bg-status-stable"></div> STABLE
+                        </span>
+<span class="flex items-center gap-2 text-status-warning font-label-caps text-xs">
+<div class="w-2 h-2 rounded-full bg-status-warning"></div> DEPLETING
+                        </span>
+<span class="flex items-center gap-2 text-status-critical font-label-caps text-xs">
+<div class="w-2 h-2 rounded-full bg-status-critical"></div> CRITICAL
+                        </span>
+</div>
+</div>
+<div class="flex-grow overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-slate bg-opacity-50">
+<tr class="font-label-caps text-label-caps text-on-surface-variant border-b border-outline-variant">
+<th class="px-6 py-4">Pod Identification</th>
+<th class="px-6 py-4">Resource Matrix (W / F / M)</th>
+<th class="px-6 py-4">Runway Days</th>
+<th class="px-6 py-4">Operational Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant divide-opacity-30">
+<!-- Pod 1 -->
+<tr class="zebra-row hover:bg-telemetry-teal hover:bg-opacity-5 transition-colors">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-2 h-8 bg-status-stable"></div>
+<div>
+<p class="font-headline-sm text-sm font-bold">Kestrel</p>
+<p class="font-data-mono text-xs text-on-surface-variant">North Sector #001</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<div class="flex gap-2">
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-status-stable" style="width: 85%"></div>
+</div>
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-status-stable" style="width: 72%"></div>
+</div>
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-status-stable" style="width: 90%"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-5 font-data-mono text-primary">14.2d</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-status-stable bg-opacity-20 text-status-stable text-[10px] font-label-caps rounded">STABLE</span>
+</td>
+</tr>
+<!-- Pod 2 -->
+<tr class="zebra-row hover:bg-telemetry-teal hover:bg-opacity-5 transition-colors">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-2 h-8 bg-status-warning"></div>
+<div>
+<p class="font-headline-sm text-sm font-bold">Marrow</p>
+<p class="font-data-mono text-xs text-on-surface-variant">South Sector #014</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<div class="flex gap-2">
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-status-warning" style="width: 42%"></div>
+</div>
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-status-stable" style="width: 65%"></div>
+</div>
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-status-stable" style="width: 78%"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-5 font-data-mono text-status-warning">4.5d</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-status-warning bg-opacity-20 text-status-warning text-[10px] font-label-caps rounded">DEPLETING</span>
+</td>
+</tr>
+<!-- Pod 3 -->
+<tr class="zebra-row hover:bg-telemetry-teal hover:bg-opacity-5 transition-colors">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-2 h-8 bg-status-stable"></div>
+<div>
+<p class="font-headline-sm text-sm font-bold">Tallowfen</p>
+<p class="font-data-mono text-xs text-on-surface-variant">West Sector #009</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<div class="flex gap-2">
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-status-stable" style="width: 92%"></div>
+</div>
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-status-stable" style="width: 88%"></div>
+</div>
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-status-stable" style="width: 85%"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-5 font-data-mono text-primary">18.0d</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-status-stable bg-opacity-20 text-status-stable text-[10px] font-label-caps rounded">STABLE</span>
+</td>
+</tr>
+<!-- Pod 4 -->
+<tr class="zebra-row hover:bg-telemetry-teal hover:bg-opacity-5 transition-colors bg-status-emergency bg-opacity-5">
+<td class="px-6 py-5">
+<div class="flex items-center gap-3">
+<div class="w-2 h-8 bg-status-critical"></div>
+<div>
+<p class="font-headline-sm text-sm font-bold">Reed's End</p>
+<p class="font-data-mono text-xs text-on-surface-variant">Estuary Sector #004</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<div class="flex gap-2">
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-status-critical" style="width: 8%"></div>
+</div>
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-status-critical" style="width: 12%"></div>
+</div>
+<div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-status-warning" style="width: 30%"></div>
+</div>
+</div>
+</td>
+<td class="px-6 py-5 font-data-mono text-status-critical">0.8d</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-status-critical bg-opacity-20 text-status-critical text-[10px] font-label-caps rounded">EMERGENCY</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Historical Stock Depletion & Map -->
+<div class="flex flex-col gap-panel-gap">
+<!-- Stock Depletion Chart Placeholder -->
+<div class="glass-panel p-6 rounded-xl flex-grow">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant">HISTORICAL STOCK DEPLETION</h3>
+<span class="material-symbols-outlined text-on-surface-variant text-body-md" data-icon="open_in_full">open_in_full</span>
+</div>
+<div class="relative h-48 w-full border-l border-b border-outline-variant flex items-end">
+<!-- SVG Simulated Line Chart -->
+<svg class="w-full h-full" viewbox="0 0 400 150">
+<path d="M0,130 L50,110 L100,120 L150,90 L200,105 L250,70 L300,85 L350,40 L400,20" fill="none" stroke="#2EC4B6" stroke-linecap="round" stroke-width="3"></path>
+<path d="M0,140 L50,135 L100,145 L150,120 L200,130 L250,110 L300,125 L350,100 L400,90" fill="none" stroke="#E63946" stroke-dasharray="4" stroke-width="2"></path>
+</svg>
+<div class="absolute bottom-[-24px] w-full flex justify-between text-[10px] font-label-caps text-on-surface-variant">
+<span>-12H</span><span>-8H</span><span>-4H</span><span>NOW</span>
+</div>
+</div>
+<div class="mt-8 flex gap-4 text-xs font-label-caps">
+<div class="flex items-center gap-2"><div class="w-3 h-1 bg-telemetry-teal"></div> TOTAL STOCK</div>
+<div class="flex items-center gap-2"><div class="w-3 h-1 border-b border-status-critical border-dashed"></div> UNMET NEED</div>
+</div>
+</div>
+<!-- Sector Map View -->
+<div class="glass-panel rounded-xl h-64 relative overflow-hidden group">
+<div class="absolute inset-0 z-0 bg-slate-900">
+<div class="w-full h-full bg-cover opacity-60" data-alt="A stylized digital topological map of a maritime bay area at night. The map uses deep navy and slate tones with glowing cyan outlines for the coastline and sectors. Small orange and red pulses represent Pod stations. High-tech HUD overlays with grid coordinates and data labels create a futuristic operations center atmosphere." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC3ngaXYbReLp7nbCfTN84gP2KmHGyASBMw_J-2-3wIhNqGzjaMaq3dunjBgsqmzuBxFPsBy9kLYqFDSdBHQDUJsPY5Q8b8N4GurfUD9uWj_-RarLWguFLC80BRbdhUumYL5JyVhXqqwRXG5aCvYjuX40KUp38MaJF9VFQ1nMG109fzGGkEoi-ytWrf7EstXCX4yv_Sc5bQ1nH19CdIIP4SLTDkWiY_xbUSK2IurnwnsykD22Ej6VV1-g')"></div>
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-deep-navy via-transparent to-transparent z-10"></div>
+<div class="absolute bottom-4 left-4 z-20">
+<p class="font-label-caps text-label-caps text-primary">SECTOR VIEW: MATILDA BAY</p>
+<p class="font-data-mono text-[10px] text-on-surface-variant">32.0003° S, 115.8202° E</p>
+</div>
+<div class="absolute top-4 right-4 z-20">
+<button class="bg-surface-slate bg-opacity-80 p-2 rounded hover:bg-primary hover:text-deep-navy transition-all">
+<span class="material-symbols-outlined text-body-md" data-icon="my_location">my_location</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- System Alerts / Activity Feed Footer -->
+<div class="mt-panel-gap glass-panel rounded-xl p-6">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-body-sm" data-icon="history">history</span>
+                AUDITABLE ACTION LOG
+            </h3>
+<div class="space-y-3">
+<div class="flex items-center justify-between text-body-sm py-2 border-b border-outline-variant border-opacity-10">
+<span class="font-data-mono text-on-surface-variant">14:22:05</span>
+<span class="flex-grow px-4">Fair-Priority Calibration recalibrated for Pod 4 distress signatures.</span>
+<span class="font-label-caps text-xs text-telemetry-teal">SYSTEM_AUTO</span>
+</div>
+<div class="flex items-center justify-between text-body-sm py-2 border-b border-outline-variant border-opacity-10">
+<span class="font-data-mono text-on-surface-variant">14:18:12</span>
+<span class="flex-grow px-4">Unmet Need alert triggered: 1,400kg shortfall predicted at Reed's End.</span>
+<span class="font-label-caps text-xs text-status-critical">URGENT</span>
+</div>
+<div class="flex items-center justify-between text-body-sm py-2 border-b border-outline-variant border-opacity-10">
+<span class="font-data-mono text-on-surface-variant">13:55:00</span>
+<span class="flex-grow px-4">Drone Swarm 'Epsilon' returned to hangar for maintenance.</span>
+<span class="font-label-caps text-xs text-on-surface-variant">ROUTINE</span>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB Action (Contextual to Dashboard) -->
+<button class="fixed bottom-8 right-8 w-16 h-16 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group">
+<span class="material-symbols-outlined text-3xl" data-icon="add_task">add_task</span>
+<span class="absolute right-20 bg-surface-slate px-3 py-1 rounded text-xs font-label-caps opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">INITIATE RESUPPLY</span>
+</button>
+<!-- Mobile Bottom Navigation Shell -->
+<nav class="md:hidden fixed bottom-0 w-full bg-deep-navy border-t border-outline-variant flex justify-around items-center h-16 z-50">
+<div class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-[10px] font-label-caps">Home</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="hub">hub</span>
+<span class="text-[10px] font-label-caps">Market</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="text-[10px] font-label-caps">Data</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="text-[10px] font-label-caps">Profile</span>
+</div>
+</nav>
+<script>
+        // Micro-interaction for Calibration Toggle
+        const toggleInteraction = () => {
+            const toggle = document.querySelector('.w-10.h-5');
+            const handle = toggle.querySelector('div');
+            toggle.addEventListener('click', () => {
+                const isActive = toggle.classList.contains('bg-telemetry-teal');
+                if (isActive) {
+                    handle.style.left = 'auto';
+                    handle.style.right = '4px';
+                } else {
+                    handle.style.right = 'auto';
+                    handle.style.left = '4px';
+                }
+            });
+        };
+        
+        // Simple Dashboard Counter Animation for "Silent Need" urgency
+        let unmetNeed = 14208;
+        setInterval(() => {
+            if (Math.random() > 0.7) {
+                unmetNeed += Math.floor(Math.random() * 5);
+                const counter = document.querySelector('.text-display-lg.text-status-critical');
+                if (counter) {
+                    counter.innerHTML = `${unmetNeed.toLocaleString()} <span class="text-headline-md opacity-50 font-data-mono">KG</span>`;
+                }
+            }
+        }, 3000);
+    </script>
+</body></html>

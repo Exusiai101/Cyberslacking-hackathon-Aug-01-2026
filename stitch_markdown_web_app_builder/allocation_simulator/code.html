@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Matilda Bay Ops | Resource Allocation Simulator</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&family=Hanken+Grotesk:wght@600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@100..900&family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(27, 38, 59, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(142, 145, 150, 0.2);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #01080E;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #44474c;
+            border-radius: 2px;
+        }
+        @keyframes pulse-status {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .animate-pulse-status {
+            animation: pulse-status 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-on-surface": "#2f312e",
+                    "surface-tint": "#bac8dc",
+                    "surface-container-low": "#1a1c1a",
+                    "on-tertiary-fixed-variant": "#005235",
+                    "secondary-fixed-dim": "#a5d0b9",
+                    "on-secondary": "#0e3727",
+                    "surface-variant": "#333533",
+                    "secondary": "#a5d0b9",
+                    "primary": "#bac8dc",
+                    "on-tertiary-container": "#299468",
+                    "tertiary-container": "#001f12",
+                    "deep-navy": "#01080E",
+                    "surface-container-lowest": "#0c0f0d",
+                    "on-secondary-fixed": "#002114",
+                    "on-error": "#690005",
+                    "status-warning": "#FFB703",
+                    "surface-container-high": "#282b28",
+                    "telemetry-teal": "#2EC4B6",
+                    "surface-container-highest": "#333533",
+                    "error-container": "#93000a",
+                    "surface-dim": "#111412",
+                    "outline": "#8e9196",
+                    "outline-variant": "#44474c",
+                    "primary-container": "#0d1b2a",
+                    "surface-slate": "#1B263B",
+                    "on-surface-variant": "#c4c6cc",
+                    "secondary-container": "#29513f",
+                    "on-primary-fixed": "#0f1c2c",
+                    "primary-fixed-dim": "#bac8dc",
+                    "on-secondary-fixed-variant": "#274e3d",
+                    "on-tertiary": "#003823",
+                    "status-critical": "#E63946",
+                    "on-primary-fixed-variant": "#3a4859",
+                    "inverse-surface": "#e2e3df",
+                    "surface-bright": "#373a37",
+                    "secondary-fixed": "#c1ecd4",
+                    "tertiary-fixed": "#92f7c3",
+                    "tertiary": "#75daa8",
+                    "on-secondary-container": "#97c2ab",
+                    "background": "#111412",
+                    "on-tertiary-fixed": "#002113",
+                    "surface": "#111412",
+                    "on-surface": "#e2e3df",
+                    "on-primary": "#243141",
+                    "status-stable": "#2D6A4F",
+                    "on-primary-container": "#768497",
+                    "tertiary-fixed-dim": "#75daa8",
+                    "primary-fixed": "#d6e4f9",
+                    "inverse-primary": "#525f71",
+                    "on-error-container": "#ffdad6",
+                    "error": "#ffb4ab",
+                    "surface-container": "#1e201e",
+                    "on-background": "#e2e3df",
+                    "status-emergency": "#9B2226"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "margin-mobile": "16px",
+                    "gutter": "16px",
+                    "panel-gap": "24px",
+                    "margin-desktop": "32px"
+            },
+            "fontFamily": {
+                    "label-caps": ["JetBrains Mono"],
+                    "body-md": ["Inter"],
+                    "data-mono": ["JetBrains Mono"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "headline-lg": ["Hanken Grotesk"],
+                    "body-sm": ["Inter"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "body-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "label-caps": ["12px", {"lineHeight": "16px", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "data-mono": ["14px", {"lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-deep-navy text-on-surface font-body-md overflow-hidden">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-deep-navy border-b border-outline-variant flex justify-between items-center h-16 px-margin-desktop w-full">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary text-2xl" data-weight="fill" style="font-variation-settings: 'FILL' 1;">hub</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary tracking-tight">MATILDA BAY OPS</h1>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant text-sm">search</span>
+<input class="bg-surface-slate border border-outline-variant rounded-lg pl-10 pr-4 py-1.5 text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary w-64 transition-all" placeholder="Search Pods..." type="text"/>
+</div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">settings</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">account_circle</span>
+</div>
+</div>
+</header>
+<!-- Side Navigation Bar -->
+<aside class="fixed left-0 top-0 h-full w-64 z-40 bg-surface-container-lowest border-r border-outline-variant flex flex-col pt-20 pb-4 h-full">
+<div class="px-4 mb-8">
+<div class="flex items-center gap-3 p-3 bg-surface-slate rounded-xl border border-outline-variant">
+<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">analytics</span>
+</div>
+<div>
+<p class="font-label-caps text-label-caps text-on-surface">Pod Clusters</p>
+<p class="text-[10px] text-telemetry-teal uppercase tracking-widest font-bold">Active Monitoring</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 py-3 px-4 mx-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">dashboard</span>
+<span class="font-label-caps text-label-caps">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-4 mx-2 bg-secondary-container text-on-secondary-container rounded-lg group" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-label-caps text-label-caps">Allocation</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-4 mx-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">hub</span>
+<span class="font-label-caps text-label-caps">Marketplace</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-4 mx-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">settings_input_component</span>
+<span class="font-label-caps text-label-caps">Telemetry</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-outline-variant/30 pt-4 space-y-1">
+<a class="flex items-center gap-3 py-3 px-4 mx-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">monitor_heart</span>
+<span class="font-label-caps text-label-caps">System Health</span>
+</a>
+<a class="flex items-center gap-3 py-3 px-4 mx-2 text-on-surface-variant hover:bg-surface-container-high transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">help_center</span>
+<span class="font-label-caps text-label-caps">Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pl-64 pt-16 h-screen overflow-y-auto custom-scrollbar">
+<!-- Crisis Banner -->
+<div class="w-full bg-status-emergency/10 border-b border-status-emergency/30 px-margin-desktop py-3 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-status-emergency animate-pulse-status">warning</span>
+<p class="text-body-sm font-semibold text-status-emergency">SILENT NEED ALERT: Pod Delta-7 reporting critically low resource runway despite stable distance metrics.</p>
+</div>
+<button class="bg-status-emergency text-white px-4 py-1 rounded text-label-caps uppercase hover:brightness-110 transition-all">Prioritize Deploy</button>
+</div>
+<div class="p-margin-desktop space-y-panel-gap">
+<!-- Top Section: Header & Action -->
+<div class="flex justify-between items-end">
+<div>
+<h2 class="font-display-lg text-display-lg text-primary">Allocation Simulator</h2>
+<p class="text-on-surface-variant max-w-2xl font-body-lg">Simulate emergency resource distribution logic. Toggle between baseline distance-based models and the Fair-Priority Need-based framework to visualize impact on survival runways.</p>
+</div>
+<button class="flex items-center gap-2 bg-telemetry-teal text-deep-navy px-8 py-4 rounded-xl font-bold font-headline-md hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-telemetry-teal/20" id="simulateBtn">
+<span class="material-symbols-outlined">rocket_launch</span>
+                    Simulate Allocation
+                </button>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-panel-gap">
+<!-- 1. Resource Pools Input -->
+<div class="col-span-12 lg:col-span-4 space-y-4">
+<div class="glass-panel p-6 rounded-2xl h-full flex flex-col">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">inventory_2</span>
+                                Resource Pools
+                            </h3>
+<span class="text-label-caps text-telemetry-teal bg-telemetry-teal/10 px-2 py-0.5 rounded">Real-time</span>
+</div>
+<div class="space-y-6 flex-1">
+<!-- Water -->
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="text-label-caps text-on-surface-variant">💧 Potable Water (L)</label>
+<span class="font-data-mono text-primary">12,500</span>
+</div>
+<input class="w-full accent-primary bg-surface-container-highest rounded-full h-2 appearance-none cursor-pointer" type="range" value="75"/>
+<div class="flex justify-between text-[10px] text-on-surface-variant font-data-mono">
+<span>0</span>
+<span>15,000 MAX</span>
+</div>
+</div>
+<!-- Food -->
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="text-label-caps text-on-surface-variant">🥩 Biological Units</label>
+<span class="font-data-mono text-secondary">4,200</span>
+</div>
+<input class="w-full accent-secondary bg-surface-container-highest rounded-full h-2 appearance-none cursor-pointer" type="range" value="45"/>
+<div class="flex justify-between text-[10px] text-on-surface-variant font-data-mono">
+<span>0</span>
+<span>10,000 MAX</span>
+</div>
+</div>
+<!-- Medicine -->
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="text-label-caps text-on-surface-variant">💊 Medical Kits</label>
+<span class="font-data-mono text-status-warning">850</span>
+</div>
+<input class="w-full accent-status-warning bg-surface-container-highest rounded-full h-2 appearance-none cursor-pointer" type="range" value="25"/>
+<div class="flex justify-between text-[10px] text-on-surface-variant font-data-mono">
+<span>0</span>
+<span>3,000 MAX</span>
+</div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-outline-variant/30">
+<div class="flex items-center gap-3 p-3 bg-deep-navy rounded-lg border border-outline-variant/50">
+<span class="text-2xl">🦪</span>
+<div>
+<p class="text-label-caps text-on-surface-variant">Available Bay Credits</p>
+<p class="font-data-mono text-xl text-on-surface">450,230.00</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- 2. Side-by-Side Comparison -->
+<div class="col-span-12 lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-panel-gap">
+<!-- Naive Priority -->
+<div class="glass-panel p-6 rounded-2xl relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10">
+<span class="material-symbols-outlined text-[80px]">route</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface-variant mb-4">Naive Priority</h3>
+<p class="text-body-sm text-on-surface-variant/70 mb-6">Calculates allocation based on proximity. Minimizes fuel consumption and transit time, favoring clusters closest to the main hub.</p>
+<div class="space-y-4">
+<div class="p-3 bg-surface-dim border-l-4 border-outline-variant rounded-r-lg">
+<p class="text-label-caps text-outline">Top Allocated</p>
+<p class="font-body-lg font-bold">Hub-Adjacent Cluster Alpha</p>
+<p class="font-data-mono text-xs text-status-stable">+85% Fulfillment</p>
+</div>
+<div class="p-3 bg-surface-dim border-l-4 border-status-critical/30 rounded-r-lg">
+<p class="text-label-caps text-outline">Deprioritized</p>
+<p class="font-body-lg font-bold">Deep Sector Delta-7</p>
+<p class="font-data-mono text-xs text-status-critical">-92% Fulfillment</p>
+</div>
+</div>
+<div class="mt-8">
+<p class="text-label-caps text-on-surface-variant mb-2">Efficiency Rating</p>
+<div class="w-full bg-surface-container-highest h-4 rounded-full overflow-hidden">
+<div class="bg-outline h-full w-[85%]"></div>
+</div>
+</div>
+</div>
+<!-- Fair Priority -->
+<div class="glass-panel p-6 rounded-2xl border-telemetry-teal/30 ring-1 ring-telemetry-teal/20 relative overflow-hidden">
+<div class="absolute -top-4 -right-4 w-24 h-24 bg-telemetry-teal/10 rounded-full blur-2xl"></div>
+<div class="absolute top-0 right-0 p-4 text-telemetry-teal">
+<span class="material-symbols-outlined text-[40px]">balance</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-telemetry-teal mb-4">Fair Priority</h3>
+<p class="text-body-sm text-on-surface-variant mb-6">Weighted logic emphasizing "Need Runway" over distance. Uses silent need multipliers to prevent catastrophic failures in isolated pods.</p>
+<div class="space-y-4">
+<div class="p-3 bg-secondary-container/20 border-l-4 border-telemetry-teal rounded-r-lg">
+<p class="text-label-caps text-telemetry-teal">Top Allocated</p>
+<p class="font-body-lg font-bold text-on-secondary-container">Deep Sector Delta-7</p>
+<p class="font-data-mono text-xs text-status-stable">+94% Fulfillment</p>
+</div>
+<div class="p-3 bg-surface-dim border-l-4 border-outline-variant rounded-r-lg">
+<p class="text-label-caps text-outline">Adjusted</p>
+<p class="font-body-lg font-bold">Hub-Adjacent Cluster Alpha</p>
+<p class="font-data-mono text-xs text-status-warning">-15% Fulfillment (Stable)</p>
+</div>
+</div>
+<div class="mt-8">
+<p class="text-label-caps text-telemetry-teal mb-2">Fairness Score</p>
+<div class="w-full bg-surface-container-highest h-4 rounded-full overflow-hidden">
+<div class="bg-telemetry-teal h-full w-[98%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- 3. Fair Priority Breakdown (Bento Style) -->
+<div class="col-span-12 grid grid-cols-1 md:grid-cols-3 gap-panel-gap">
+<div class="glass-panel p-5 rounded-2xl border-t-4 border-status-critical">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-status-critical">clinical_notes</span>
+<h4 class="font-label-caps text-label-caps">Severity Index</h4>
+</div>
+<p class="text-body-sm text-on-surface-variant">Real-time health telemetry across pod populations. Weights critical injury counts 3x higher than baseline maintenance.</p>
+<div class="mt-4 font-data-mono text-2xl text-status-critical">0.82 / 1.0</div>
+</div>
+<div class="glass-panel p-5 rounded-2xl border-t-4 border-status-warning">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-status-warning">visibility_off</span>
+<h4 class="font-label-caps text-label-caps">Silent Need Bonus</h4>
+</div>
+<p class="text-body-sm text-on-surface-variant">Predictive multiplier for pods with historically unreliable reporting nodes. Pre-empts systemic collapse.</p>
+<div class="mt-4 font-data-mono text-2xl text-status-warning">+15% WT</div>
+</div>
+<div class="glass-panel p-5 rounded-2xl border-t-4 border-telemetry-teal">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-telemetry-teal">shield</span>
+<h4 class="font-label-caps text-label-caps">Vulnerability</h4>
+</div>
+<p class="text-body-sm text-on-surface-variant">Calculates environmental harshness and distance from secondary supply routes. Protects the most isolated.</p>
+<div class="mt-4 font-data-mono text-2xl text-telemetry-teal">MAX LEVEL</div>
+</div>
+</div>
+<!-- 4. Allocation Audit Trail -->
+<div class="col-span-12">
+<div class="glass-panel rounded-2xl overflow-hidden">
+<div class="bg-surface-container-high px-6 py-4 border-b border-outline-variant flex justify-between items-center">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">history_edu</span>
+                                Allocation Audit Trail
+                            </h3>
+<button class="text-label-caps text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">download</span>
+                                Export Ledger
+                            </button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-deep-navy/50 text-label-caps text-on-surface-variant border-b border-outline-variant/30">
+<tr>
+<th class="px-6 py-4 font-normal">TIMESTAMP</th>
+<th class="px-6 py-4 font-normal">EVENT</th>
+<th class="px-6 py-4 font-normal">POD ID</th>
+<th class="px-6 py-4 font-normal">RESOURCE</th>
+<th class="px-6 py-4 font-normal">DELTA</th>
+<th class="px-6 py-4 font-normal">STATUS</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20 font-data-mono text-sm">
+<tr class="hover:bg-telemetry-teal/5 transition-colors">
+<td class="px-6 py-3">04:12:01.882</td>
+<td class="px-6 py-3">Auto-Rebalance</td>
+<td class="px-6 py-3 text-primary">DELTA-7</td>
+<td class="px-6 py-3">H2O</td>
+<td class="px-6 py-3 text-status-stable">+1,200L</td>
+<td class="px-6 py-3"><span class="bg-status-stable/20 text-status-stable px-2 py-0.5 rounded text-[10px] uppercase font-bold">Verified</span></td>
+</tr>
+<tr class="hover:bg-telemetry-teal/5 transition-colors bg-surface-slate/20">
+<td class="px-6 py-3">04:11:55.421</td>
+<td class="px-6 py-3">Emergency Shift</td>
+<td class="px-6 py-3 text-primary">EPSILON-3</td>
+<td class="px-6 py-3">MED-KIT</td>
+<td class="px-6 py-3 text-status-critical">-24U</td>
+<td class="px-6 py-3"><span class="bg-status-warning/20 text-status-warning px-2 py-0.5 rounded text-[10px] uppercase font-bold">Pending</span></td>
+</tr>
+<tr class="hover:bg-telemetry-teal/5 transition-colors">
+<td class="px-6 py-3">04:10:30.119</td>
+<td class="px-6 py-3">Market Trade</td>
+<td class="px-6 py-3 text-primary">ALPHA-HUB</td>
+<td class="px-6 py-3">BIO-UNIT</td>
+<td class="px-6 py-3 text-status-stable">+500U</td>
+<td class="px-6 py-3"><span class="bg-status-stable/20 text-status-stable px-2 py-0.5 rounded text-[10px] uppercase font-bold">Verified</span></td>
+</tr>
+<tr class="hover:bg-telemetry-teal/5 transition-colors bg-surface-slate/20">
+<td class="px-6 py-3">04:08:12.001</td>
+<td class="px-6 py-3">Silent Need Adjust</td>
+<td class="px-6 py-3 text-primary">GAMMA-9</td>
+<td class="px-6 py-3">H2O</td>
+<td class="px-6 py-3 text-status-stable">+2,000L</td>
+<td class="px-6 py-3"><span class="bg-status-stable/20 text-status-stable px-2 py-0.5 rounded text-[10px] uppercase font-bold">Verified</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Success Modal Overlay (Hidden by default) -->
+<div class="fixed inset-0 bg-deep-navy/80 backdrop-blur-md z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-all duration-500" id="simulationOverlay">
+<div class="glass-panel p-10 rounded-3xl max-w-lg w-full text-center space-y-6 scale-90 transition-transform duration-500">
+<div class="w-24 h-24 bg-telemetry-teal/20 rounded-full flex items-center justify-center mx-auto mb-4">
+<span class="material-symbols-outlined text-telemetry-teal text-5xl">task_alt</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Simulation Finalized</h2>
+<p class="text-on-surface-variant font-body-lg">The Fair-Priority algorithm has been applied. 12,400L of water and 302 medical kits are currently being routed to high-need sectors. Estimated arrival: 14 mins.</p>
+<div class="grid grid-cols-2 gap-4 pt-4">
+<div class="bg-surface-dim p-4 rounded-xl border border-outline-variant">
+<p class="text-label-caps text-on-surface-variant">LIVES PRESERVED</p>
+<p class="text-3xl font-data-mono text-status-stable">1,402</p>
+</div>
+<div class="bg-surface-dim p-4 rounded-xl border border-outline-variant">
+<p class="text-label-caps text-on-surface-variant">CREDIT COST</p>
+<p class="text-3xl font-data-mono text-primary">82k</p>
+</div>
+</div>
+<button class="w-full bg-primary text-deep-navy py-4 rounded-xl font-bold font-label-caps hover:brightness-110 transition-all" id="closeModal">RETURN TO CONSOLE</button>
+</div>
+</div>
+<script>
+        const simulateBtn = document.getElementById('simulateBtn');
+        const overlay = document.getElementById('simulationOverlay');
+        const overlayContent = overlay.querySelector('div');
+        const closeModal = document.getElementById('closeModal');
+
+        simulateBtn.addEventListener('click', () => {
+            // Visual feedback on button
+            simulateBtn.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span> Processing...';
+            
+            setTimeout(() => {
+                overlay.classList.remove('opacity-0', 'pointer-events-none');
+                overlayContent.classList.remove('scale-90');
+                overlayContent.classList.add('scale-100');
+                simulateBtn.innerHTML = '<span class="material-symbols-outlined">rocket_launch</span> Simulate Allocation';
+            }, 1200);
+        });
+
+        closeModal.addEventListener('click', () => {
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+            overlayContent.classList.remove('scale-100');
+            overlayContent.classList.add('scale-90');
+        });
+
+        // Simple parallax effect for glass panels
+        document.addEventListener('mousemove', (e) => {
+            const panels = document.querySelectorAll('.glass-panel');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+
+            panels.forEach(panel => {
+                const speed = 5;
+                const x = (0.5 - mouseX) * speed;
+                const y = (0.5 - mouseY) * speed;
+                panel.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+</body></html>
