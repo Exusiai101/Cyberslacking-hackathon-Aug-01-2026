@@ -1,10 +1,14 @@
-/* Matilda Bay Ops - Interactive Dashboard & Data Visualization Engine */
+/* Matilda Bay Ops — Clean Flat Design Chart Engine */
 document.addEventListener("DOMContentLoaded", function() {
   let fullData = null;
   let chartStock = null;
   let chartDisruption = null;
   let chartCouncil = null;
   let chartCalibration = null;
+
+  // Chart.js Global Flat Design Configuration
+  Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, sans-serif";
+  Chart.defaults.color = "#94a3b8";
 
   // Tab Switching Logic
   const tabBtns = document.querySelectorAll(".nav-tab-btn");
@@ -18,9 +22,9 @@ document.addEventListener("DOMContentLoaded", function() {
       tabPanes.forEach(p => p.classList.remove("active"));
 
       btn.classList.add("active");
-      document.getElementById("tab-" + targetTab).classList.add("active");
+      const targetPane = document.getElementById("tab-" + targetTab);
+      if (targetPane) targetPane.classList.add("active");
 
-      // Re-render/update chart sizes when switching to data viz tab
       if (targetTab === "visualization" || targetTab === "council") {
         setTimeout(() => {
           if (chartStock) chartStock.resize();
@@ -68,7 +72,6 @@ document.addEventListener("DOMContentLoaded", function() {
     let supplyRecords = fullData.supply_records;
     let councilRecords = fullData.council_records;
 
-    // Filter by pod if selected
     if (selectedPod !== "all") {
       supplyRecords = supplyRecords.filter(r => r.pod_id === selectedPod);
       councilRecords = councilRecords.filter(r => r.pod_id === selectedPod);
@@ -85,10 +88,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const ctx = document.getElementById("chartStockCanvas");
     if (!ctx) return;
 
-    // Group records by date
     const dates = [...new Set(records.map(r => r.report_date))].sort();
-
-    // Group by Pods
     const pods = [...new Set(records.map(r => r.pod_name))];
 
     const colors = {
@@ -111,7 +111,6 @@ document.addEventListener("DOMContentLoaded", function() {
         if (resourceFilter === "food") return rec.food_runway_days;
         if (resourceFilter === "medicine") return rec.medicine_runway_days;
         
-        // Default: overall minimum runway
         return Math.min(rec.water_runway_days, rec.food_runway_days, rec.medicine_runway_days);
       });
 
@@ -119,11 +118,11 @@ document.addEventListener("DOMContentLoaded", function() {
         label: `${podName} Runway (Days)`,
         data: runwayData,
         borderColor: colors[podName] || "#8b5cf6",
-        backgroundColor: colors[podName] + "22",
-        borderWidth: 2.5,
-        tension: 0.3,
+        backgroundColor: colors[podName],
+        borderWidth: 2,
+        tension: 0,
         fill: false,
-        pointRadius: 3,
+        pointRadius: 4,
         pointHoverRadius: 6,
       });
     });
@@ -140,26 +139,28 @@ document.addEventListener("DOMContentLoaded", function() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { labels: { color: "#94a3b8", font: { family: "Inter" } } },
+          legend: { labels: { color: "#94a3b8", font: { family: "Plus Jakarta Sans", weight: "600" } } },
           tooltip: {
             mode: "index",
             intersect: false,
-            backgroundColor: "#141b2d",
+            backgroundColor: "#131926",
             titleColor: "#f8fafc",
             bodyColor: "#94a3b8",
-            borderColor: "rgba(255,255,255,0.1)",
+            borderColor: "#263147",
             borderWidth: 1,
+            padding: 10,
+            cornerRadius: 4,
           }
         },
         scales: {
           x: {
             ticks: { color: "#64748b" },
-            grid: { color: "rgba(255,255,255,0.05)" }
+            grid: { color: "#182030" }
           },
           y: {
             title: { display: true, text: "Supply Runway (Days)", color: "#94a3b8" },
             ticks: { color: "#64748b" },
-            grid: { color: "rgba(255,255,255,0.05)" },
+            grid: { color: "#182030" },
             min: 0
           }
         }
@@ -172,15 +173,10 @@ document.addEventListener("DOMContentLoaded", function() {
     const ctx = document.getElementById("chartDisruptionCanvas");
     if (!ctx) return;
 
-    // Group by date: sum consumption & peak disruption
     const dateMap = {};
     records.forEach(r => {
       if (!dateMap[r.report_date]) {
-        dateMap[r.report_date] = {
-          water: 0,
-          food: 0,
-          disruption: "none"
-        };
+        dateMap[r.report_date] = { water: 0, food: 0, disruption: "none" };
       }
       dateMap[r.report_date].water += r.water_consumption_lpd;
       dateMap[r.report_date].food += r.food_consumption_kgpd;
@@ -209,7 +205,7 @@ document.addEventListener("DOMContentLoaded", function() {
           label: "Total Daily Water Burn Rate (Litres)",
           data: waterData,
           backgroundColor: disruptionColors,
-          borderRadius: 4,
+          borderRadius: 2,
         }]
       },
       options: {
@@ -218,6 +214,10 @@ document.addEventListener("DOMContentLoaded", function() {
         plugins: {
           legend: { display: false },
           tooltip: {
+            backgroundColor: "#131926",
+            borderColor: "#263147",
+            borderWidth: 1,
+            cornerRadius: 4,
             callbacks: {
               afterLabel: function(context) {
                 const d = dates[context.dataIndex];
@@ -228,7 +228,7 @@ document.addEventListener("DOMContentLoaded", function() {
         },
         scales: {
           x: { ticks: { color: "#64748b" }, grid: { display: false } },
-          y: { ticks: { color: "#64748b" }, grid: { color: "rgba(255,255,255,0.05)" } }
+          y: { ticks: { color: "#64748b" }, grid: { color: "#182030" } }
         }
       }
     });
@@ -239,13 +239,9 @@ document.addEventListener("DOMContentLoaded", function() {
     const ctx = document.getElementById("chartCouncilCanvas");
     if (!ctx) return;
 
-    const events = [...new Set(records.map(r => `Event #${r.event_id} (${r.event_date})`))];
-
-    // Compare Pod 4 (Reed's End) Naive Rank vs Fair Rank
     const pod4Records = records.filter(r => r.pod_id === "Pod 4");
     const naiveRanks = pod4Records.map(r => r.naive_priority_rank);
     const fairRanks = pod4Records.map(r => r.fair_priority_rank);
-    const unmetAmounts = pod4Records.map(r => r.unmet_amount);
 
     if (chartCouncil) chartCouncil.destroy();
 
@@ -258,13 +254,13 @@ document.addEventListener("DOMContentLoaded", function() {
             label: "Reed's End (Pod 4) Fair Need Rank (1=Highest)",
             data: fairRanks,
             backgroundColor: "#10b981",
-            borderRadius: 4,
+            borderRadius: 2,
           },
           {
             label: "Reed's End (Pod 4) Naive Rank (Distance-based)",
             data: naiveRanks,
             backgroundColor: "#f43f5e",
-            borderRadius: 4,
+            borderRadius: 2,
           }
         ]
       },
@@ -272,7 +268,8 @@ document.addEventListener("DOMContentLoaded", function() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { labels: { color: "#94a3b8" } },
+          legend: { labels: { color: "#94a3b8", font: { family: "Plus Jakarta Sans", weight: "600" } } },
+          tooltip: { backgroundColor: "#131926", borderColor: "#263147", borderWidth: 1, cornerRadius: 4 }
         },
         scales: {
           x: { ticks: { color: "#64748b" }, grid: { display: false } },
@@ -282,7 +279,7 @@ document.addEventListener("DOMContentLoaded", function() {
             ticks: { color: "#64748b", stepSize: 1 },
             min: 1,
             max: 4,
-            grid: { color: "rgba(255,255,255,0.05)" }
+            grid: { color: "#182030" }
           }
         }
       }
@@ -294,14 +291,13 @@ document.addEventListener("DOMContentLoaded", function() {
     const ctx = document.getElementById("chartCalibrationCanvas");
     if (!ctx) return;
 
-    // Filter Pod 1 records to compare elder reports vs drone scans
     const pod1Records = records.filter(r => r.pod_id === "Pod 1").slice(0, 15);
     const dates = pod1Records.map(r => r.report_date);
     
     const waterRaw = pod1Records.map(r => r.water_stock_l);
     const waterCalibrated = pod1Records.map(r => {
       if (r.report_source === "scout_drone_scan") {
-        return r.water_stock_l + 1250.0; // Correcting drone offset
+        return r.water_stock_l + 1250.0;
       }
       return r.water_stock_l;
     });
@@ -317,7 +313,7 @@ document.addEventListener("DOMContentLoaded", function() {
             label: "Raw Reported Water Stock (L)",
             data: waterRaw,
             borderColor: "#64748b",
-            borderDash: [5, 5],
+            borderDash: [4, 4],
             borderWidth: 2,
             fill: false,
           },
@@ -325,7 +321,7 @@ document.addEventListener("DOMContentLoaded", function() {
             label: "Drone Scan Calibrated Water Stock (L)",
             data: waterCalibrated,
             borderColor: "#06b6d4",
-            borderWidth: 2.5,
+            borderWidth: 2,
             fill: false,
           }
         ]
@@ -334,11 +330,12 @@ document.addEventListener("DOMContentLoaded", function() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { labels: { color: "#94a3b8" } }
+          legend: { labels: { color: "#94a3b8", font: { family: "Plus Jakarta Sans", weight: "600" } } },
+          tooltip: { backgroundColor: "#131926", borderColor: "#263147", borderWidth: 1, cornerRadius: 4 }
         },
         scales: {
           x: { ticks: { color: "#64748b" }, grid: { display: false } },
-          y: { ticks: { color: "#64748b" }, grid: { color: "rgba(255,255,255,0.05)" } }
+          y: { ticks: { color: "#64748b" }, grid: { color: "#182030" } }
         }
       }
     });
