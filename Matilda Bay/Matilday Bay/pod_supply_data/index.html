@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Matilda Bay Pods — 4/07/2026</title>
+<style>
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f6f8;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 2rem;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 0.25rem;
+  }
+  p.subtitle {
+    text-align: center;
+    color: #555;
+    margin-top: 0;
+    margin-bottom: 2rem;
+  }
+  #status {
+    text-align: center;
+    color: #a00;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1rem;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .card h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+  }
+  .card dl {
+    margin: 0;
+  }
+  .card dt {
+    font-size: 0.75rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-top: 0.5rem;
+  }
+  .card dd {
+    margin: 0;
+    font-size: 1rem;
+  }
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: capitalize;
+  }
+  .badge.stable { background: #d9f2df; color: #1c6b34; }
+  .badge.warning { background: #fdf0c8; color: #8a6100; }
+  .badge.critical { background: #fbdada; color: #a11c1c; }
+  .badge.none { background: #e7e7e7; color: #444; }
+  .badge.minor { background: #eaf1fb; color: #2a5fa0; }
+  .badge.major { background: #fbdada; color: #a11c1c; }
+</style>
+</head>
+<body>
+
+<h1>Matilda Bay Orca Pods</h1>
+<p class="subtitle">Report date: 4/07/2026</p>
+<p id="status"></p>
+<div class="grid" id="podGrid"></div>
+
+<script>
+const TARGET_DATE = "2026-07-04"; // 4/07/2026 in DD/MM/YYYY -> ISO used in the CSV
+const CSV_FILE = "matilda_bay_pod_supply_data.csv";
+
+// Minimal CSV line parser (handles plain comma-separated fields; no quoted
+// commas are present in this dataset, so a simple split is sufficient).
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const headers = lines[0].split(",");
+  return lines.slice(1).map(line => {
+    const values = line.split(",");
+    const row = {};
+    headers.forEach((h, i) => { row[h] = values[i]; });
+    return row;
+  });
+}
+
+function statusClass(value) {
+  const v = (value || "").toLowerCase();
+  return ["stable", "warning", "critical", "none", "minor", "major"].includes(v) ? v : "";
+}
+
+function renderPods(rows) {
+  const grid = document.getElementById("podGrid");
+  const statusEl = document.getElementById("status");
+  grid.innerHTML = "";
+
+  const filtered = rows.filter(r => r.report_date === TARGET_DATE);
+
+  if (filtered.length === 0) {
+    statusEl.textContent = `No pod records found for ${TARGET_DATE}.`;
+    return;
+  }
+  statusEl.textContent = "";
+
+  filtered.forEach(pod => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <h2>${pod.pod_name}</h2>
+      <dl>
+        <dt>Population</dt>
+        <dd>${pod.population}</dd>
+
+        <dt>Distance from hub (km)</dt>
+        <dd>${pod.distance_from_hub_km}</dd>
+
+        <dt>Peacock disruption</dt>
+        <dd><span class="badge ${statusClass(pod.peacock_disruption)}">${pod.peacock_disruption}</span></dd>
+
+        <dt>Overall status</dt>
+        <dd><span class="badge ${statusClass(pod.overall_status)}">${pod.overall_status}</span></dd>
+      </dl>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+document.getElementById("status").textContent = "Loading pod data...";
+
+fetch(CSV_FILE)
+  .then(res => {
+    if (!res.ok) throw new Error(`Failed to load ${CSV_FILE}: ${res.status}`);
+    return res.text();
+  })
+  .then(text => renderPods(parseCSV(text)))
+  .catch(err => {
+    document.getElementById("status").textContent =
+      "Error loading CSV data: " + err.message +
+      " (if opening this file directly via file://, serve it over a local HTTP server instead — browsers block fetch() on local files).";
+  });
+</script>
+
+</body>
+</html>
