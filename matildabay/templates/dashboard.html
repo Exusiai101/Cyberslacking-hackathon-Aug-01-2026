@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Matilda Bay Ops - Data Visualization & Intelligence Platform{% endblock %}
+
+{% block body_content %}
+<!-- Navigation Header -->
+<header class="navbar">
+  <a href="{% url 'home' %}" class="brand">
+    <div class="brand-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
+      </svg>
+    </div>
+    <span class="brand-title">Matilda Bay Ops <span class="version-tag">v2.6 LIVE</span></span>
+  </a>
+
+  <nav class="nav-tabs">
+    <button class="nav-tab-btn active" data-tab="overview">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Overview
+    </button>
+    <button class="nav-tab-btn" data-tab="visualization">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Data Visualizations
+    </button>
+    <button class="nav-tab-btn" data-tab="council">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Council Allocations
+    </button>
+    <button class="nav-tab-btn" data-tab="logs">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Scout Logs
+    </button>
+  </nav>
+
+  <div class="user-profile">
+    <div class="user-badge">
+      <div class="user-avatar">{{ username|slice:":1"|upper }}</div>
+      <span>{{ username }}</span>
+    </div>
+    <a href="{% url 'logout' %}" class="btn-logout">Sign Out</a>
+  </div>
+</header>
+
+<main class="container">
+  <!-- Global Filter Controls -->
+  <div class="control-bar">
+    <div class="filters-group">
+      <div class="filter-item">
+        <label for="podFilter">Pod Selection:</label>
+        <select id="podFilter" class="select-control">
+          <option value="all">All Pods (Pod 1 - 4)</option>
+          <option value="Pod 1">Pod 1 — Kestrel (Water Ops)</option>
+          <option value="Pod 2">Pod 2 — Marrow (Medical Hub)</option>
+          <option value="Pod 3">Pod 3 — Tallowfen (Food Store)</option>
+          <option value="Pod 4">Pod 4 — Reed's End (Remote Pod)</option>
+        </select>
+      </div>
+
+      <div class="filter-item">
+        <label for="resourceFilter">Resource Focus:</label>
+        <select id="resourceFilter" class="select-control">
+          <option value="all">All Resources (Minimum Runway)</option>
+          <option value="water">Water (Litres)</option>
+          <option value="food">Food (Kg)</option>
+          <option value="medicine">Medicine (Units)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filter-item">
+      <label class="toggle-switch">
+        <input type="checkbox" id="calibrationToggle" checked>
+        <span class="slider"></span>
+        <span>Calibrate Drone Sensor Offset</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Tab 1: Overview -->
+  <div id="tab-overview" class="tab-pane active">
+    <!-- Critical Alert Banner -->
+    {% if summary.silent_need_pods %}
+      <div class="alert-banner">
+        <div class="alert-content">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-rose);">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <div class="alert-text">
+            <strong>Silent Need Warning Detected:</strong> Reed's End (Pod 4) stopped submitting assistance requests after day 7, yet faces a <strong>failed supply status</strong> under zero food runway!
+          </div>
+        </div>
+        <button class="btn-logout" style="background: rgba(244,63,94,0.2); border: none;" onclick="document.querySelector('[data-tab=council]').click();">View Allocation Breakdown</button>
+      </div>
+    {% endif %}
+
+    <!-- Top KPI Cards -->
+    <div class="metrics-grid">
+      <div class="glass-panel metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Total Population</span>
+          <div class="metric-icon" style="color: var(--accent-cyan);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          </div>
+        </div>
+        <div class="metric-value">{{ summary.total_population }}</div>
+        <div class="metric-sub">Orcas across 4 sheltered pods</div>
+      </div>
+
+      <div class="glass-panel metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Critical Shortfall Pods</span>
+          <div class="metric-icon" style="color: var(--accent-rose);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+        </div>
+        <div class="metric-value" style="color: var(--accent-rose);">{{ summary.critical_pods_count }}</div>
+        <div class="metric-sub">Pods under &lt; 5 days runway</div>
+      </div>
+
+      <div class="glass-panel metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Unmet Council Pool Need</span>
+          <div class="metric-icon" style="color: var(--accent-amber);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          </div>
+        </div>
+        <div class="metric-value">{{ summary.total_unmet_council_need }}</div>
+        <div class="metric-sub">Unfulfilled allocation deficit</div>
+      </div>
+
+      <div class="glass-panel metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Drone Calibration Status</span>
+          <div class="metric-icon" style="color: var(--accent-emerald);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+        </div>
+        <div class="metric-value" style="color: var(--accent-emerald);">Active</div>
+        <div class="metric-sub">+1,250L Water / +45kg Food offset</div>
+      </div>
+    </div>
+
+    <!-- Active Pod Fleet Cards -->
+    <h2 style="font-size: 1.25rem; margin-bottom: 1rem; color: var(--text-primary);">Pod Fleet Status Overview</h2>
+    <div class="pods-grid">
+      {% for pod in summary.pods %}
+        <div class="glass-panel pod-card">
+          <div class="pod-card-header">
+            <div>
+              <div class="pod-name">{{ pod.pod_name }}</div>
+              <div class="pod-meta">Pop: {{ pod.population }} orcas &bull; {{ pod.distance_km }} km from hub</div>
+            </div>
+            <span class="badge badge-{{ pod.overall_status }}">{{ pod.overall_status }}</span>
+          </div>
+
+          <div class="runway-meters">
+            <div class="runway-row">
+              <div class="runway-label">
+                <span>Water Runway</span>
+                <span class="mono">{{ pod.water_runway_days|floatformat:1 }} days ({{ pod.water_stock_l|floatformat:0 }} L)</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill {% if pod.water_runway_days > 10 %}fill-emerald{% elif pod.water_runway_days > 5 %}fill-amber{% else %}fill-rose{% endif %}" style="width: {% if pod.water_runway_days > 30 %}100{% else %}{{ pod.water_runway_days|add:0|floatformat:0 }}{% endif %}%;"></div>
+              </div>
+            </div>
+
+            <div class="runway-row">
+              <div class="runway-label">
+                <span>Food Runway</span>
+                <span class="mono">{{ pod.food_runway_days|floatformat:1 }} days ({{ pod.food_stock_kg|floatformat:0 }} kg)</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill {% if pod.food_runway_days > 10 %}fill-emerald{% elif pod.food_runway_days > 5 %}fill-amber{% else %}fill-rose{% endif %}" style="width: {% if pod.food_runway_days > 30 %}100{% else %}{{ pod.food_runway_days|add:0|floatformat:0 }}{% endif %}%;"></div>
+              </div>
+            </div>
+
+            <div class="runway-row">
+              <div class="runway-label">
+                <span>Medicine Runway</span>
+                <span class="mono">{{ pod.medicine_runway_days|floatformat:1 }} days ({{ pod.medicine_stock_units|floatformat:0 }} units)</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill {% if pod.medicine_runway_days > 10 %}fill-emerald{% elif pod.medicine_runway_days > 5 %}fill-amber{% else %}fill-rose{% endif %}" style="width: {% if pod.medicine_runway_days > 30 %}100{% else %}{{ pod.medicine_runway_days|add:0|floatformat:0 }}{% endif %}%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Tab 2: Data Visualizations -->
+  <div id="tab-visualization" class="tab-pane">
+    <div class="charts-grid">
+      <!-- Chart 1: Stock & Runway Time-Series -->
+      <div class="glass-panel chart-card">
+        <div class="chart-card-header">
+          <div class="chart-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-cyan);"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Supply Runway Days Time-Series (July 1 - 30, 2026)
+          </div>
+        </div>
+        <div class="chart-canvas-container">
+          <canvas id="chartStockCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 2: Consumption Rate vs Peacock Disruption -->
+      <div class="glass-panel chart-card">
+        <div class="chart-card-header">
+          <div class="chart-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-amber);"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Daily Water Consumption vs Giant Peacock Disruption
+          </div>
+        </div>
+        <div class="chart-canvas-container">
+          <canvas id="chartDisruptionCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 3: Council Allocation Priority Comparison -->
+      <div class="glass-panel chart-card">
+        <div class="chart-card-header">
+          <div class="chart-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-rose);"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Fair Priority vs Naive Ranking (Reed's End Pod 4)
+          </div>
+        </div>
+        <div class="chart-canvas-container">
+          <canvas id="chartCouncilCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 4: Drone Scan Offset Calibration -->
+      <div class="glass-panel chart-card">
+        <div class="chart-card-header">
+          <div class="chart-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-blue);"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+            Scout Drone Scan vs Elder Report Calibration Offset
+          </div>
+        </div>
+        <div class="chart-canvas-container">
+          <canvas id="chartCalibrationCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Council Allocations -->
+  <div id="tab-council" class="tab-pane">
+    <div class="glass-panel" style="padding: 1.5rem;">
+      <h2 style="font-size: 1.25rem; margin-bottom: 1rem;">Council Allocation Meetings & Need Analysis</h2>
+      <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+        Contrasting <strong>Naive Priority</strong> (closest pod first) vs <strong>Fair Priority</strong> (vulnerability, urgency, and silent need bonus).
+      </p>
+
+      <div class="table-wrapper">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Pod</th>
+              <th>Resource</th>
+              <th>Need Status</th>
+              <th>Submitted Request</th>
+              <th>Estimated Need</th>
+              <th>Naive Rank</th>
+              <th>Fair Rank</th>
+              <th>Allocated</th>
+              <th>Unmet Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in summary.pods %}
+              <!-- Dynamic rows filled via JS or server loop -->
+            {% endfor %}
+            {% for item in summary.pods %}
+              <!-- Table rendered via client script -->
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 4: Scout Logs -->
+  <div id="tab-logs" class="tab-pane">
+    <h2 style="font-size: 1.25rem; margin-bottom: 1rem; color: var(--text-primary);">Pip's Scout Logs & Field Intelligence</h2>
+    <div class="scout-logs-grid">
+      {% for entry in scout_logs %}
+        <div class="glass-panel log-card">
+          <div class="log-title">{{ entry.title }}</div>
+          <div class="log-body">{{ entry.content|linebreaksbr }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</main>
+
+<script src="{% static 'js/dashboard.js' %}"></script>
+<script>
+  // Populate Council Table on data load
+  fetch("/api/data/")
+    .then(r => r.json())
+    .then(d => {
+      if (d.status === "success") {
+        const tbody = document.querySelector(".custom-table tbody");
+        if (tbody) {
+          tbody.innerHTML = d.council_records.map(c => `
+            <tr>
+              <td>${c.event_date}</td>
+              <td style="font-weight: 600; color: var(--text-primary);">${c.pod_name}</td>
+              <td><span class="badge" style="background: rgba(6,182,212,0.1); color: var(--accent-cyan);">${c.resource_type}</span></td>
+              <td><span class="badge badge-${c.need_status}">${c.need_status}</span></td>
+              <td>${c.request_submitted ? '<span style="color:var(--accent-emerald);">Yes</span>' : '<span style="color:var(--accent-rose); font-weight:600;">No (Silent)</span>'}</td>
+              <td class="mono">${c.estimated_true_need}</td>
+              <td class="mono" style="color:var(--accent-rose);">${c.naive_priority_rank}</td>
+              <td class="mono" style="color:var(--accent-emerald); font-weight:700;">${c.fair_priority_rank}</td>
+              <td class="mono">${c.amount_allocated}</td>
+              <td class="mono" style="color:${c.unmet_amount > 0 ? 'var(--accent-rose)' : 'var(--text-muted)'};">${c.unmet_amount}</td>
+            </tr>
+          `).join('');
+        }
+      }
+    });
+</script>
+{% endblock %}

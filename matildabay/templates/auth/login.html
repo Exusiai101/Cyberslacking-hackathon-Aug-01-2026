@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Sign In - Matilda Bay Orca Ops{% endblock %}
+
+{% block body_content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div style="display: inline-flex; width: 54px; height: 54px; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); border-radius: 14px; align-items: center; justify-content: center; color: #fff; box-shadow: var(--shadow-glow);">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
+          <path d="M12 6v6l4 2"/>
+        </svg>
+      </div>
+      <h1 class="auth-title">Matilda Bay Ops</h1>
+      <p class="auth-sub">Orca Pod Supply & Allocation Platform</p>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert-message alert-{{ message.tags }}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST" id="loginForm">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="id_username" class="form-label">Username</label>
+        <input type="text" name="username" id="id_username" class="form-input" placeholder="Enter your username" required autofocus>
+      </div>
+
+      <div class="form-group">
+        <label for="id_password" class="form-label">Password</label>
+        <input type="password" name="password" id="id_password" class="form-input" placeholder="••••••••" required>
+      </div>
+
+      <button type="submit" class="btn-primary">Sign In to Dashboard</button>
+    </form>
+
+    <div style="margin-top: 1rem; text-align: center;">
+      <button type="button" class="btn-secondary" id="demoLoginBtn">
+        <span style="color: var(--accent-cyan);">⚡ Quick Demo Sign In</span> (demo_user / password123)
+      </button>
+    </div>
+
+    <div class="auth-footer">
+      Don't have an account? <a href="{% url 'register' %}" class="auth-link">Create Account</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('demoLoginBtn').addEventListener('click', function() {
+    document.getElementById('id_username').value = 'demo_user';
+    document.getElementById('id_password').value = 'password123';
+    document.getElementById('loginForm').submit();
+  });
+</script>
+{% endblock %}
