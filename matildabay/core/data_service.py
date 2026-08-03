@@ -476,11 +476,11 @@ def simulate_fair_vs_naive_allocation(pools=None):
 
     return results
 
-def forecast_pod_crisis(disruption_level="none", forecast_days=7):
+def forecast_pod_crisis(disruption_level="none", forecast_days=7, apply_calibration=True):
     """
     Projects daily stock depletion and runway under different peacock disruption levels.
     """
-    supply_records = load_supply_data(apply_calibration=True, impute_missing=True)
+    supply_records = load_supply_data(apply_calibration=apply_calibration, impute_missing=True)
     
     latest_per_pod = {}
     for r in supply_records:
@@ -540,6 +540,9 @@ def forecast_pod_crisis(disruption_level="none", forecast_days=7):
             "projected_water_runway": w_runway,
             "projected_food_runway": f_runway,
             "projected_medicine_runway": m_runway,
+            "current_water_stock": pod["water_stock_l"],
+            "current_food_stock": pod["food_stock_kg"],
+            "current_medicine_stock": pod["medicine_stock_units"],
             "bottleneck_runway": worst_runway,
             "alert_tier": alert_tier,
             "daily_trajectory": trajectory,

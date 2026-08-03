@@ -158,12 +158,13 @@ def api_simulate_allocation_view(request):
 def api_forecast_view(request):
     """API predicting daily stock depletion and runway under different peacock disruption levels."""
     disruption = request.GET.get("disruption", "none")
+    calibrate_param = request.GET.get("calibrate", "true").lower() == "true"
     try:
         days = int(request.GET.get("days", "7"))
     except ValueError:
         days = 7
 
-    forecasts = forecast_pod_crisis(disruption_level=disruption, forecast_days=days)
+    forecasts = forecast_pod_crisis(disruption_level=disruption, forecast_days=days, apply_calibration=calibrate_param)
     return JsonResponse({
         "status": "success",
         "disruption_level": disruption,

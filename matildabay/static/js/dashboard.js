@@ -106,11 +106,12 @@ document.addEventListener("DOMContentLoaded", function() {
     renderStockChart(supplyRecords, selectedResource, isCalibrated);
     renderDisruptionChart(supplyRecords);
     renderCouncilChart(fullData.council_records, selectedPod);
+    renderCouncilTable(councilRecords);
     renderCalibrationChart(fullData.supply_records);
-    renderOverview(selectedPod, selectedResource, selectedDisruption);
+    renderOverview(selectedPod, selectedResource, selectedDisruption, isCalibrated);
   }
 
-  function renderOverview(selectedPod, selectedResource, selectedDisruption) {
+  function renderOverview(selectedPod, selectedResource, selectedDisruption, isCalibrated) {
     // 1. Pod & Resource HTML DOM filtering
     document.querySelectorAll('.pods-grid .pod-card').forEach(card => {
       if (selectedPod === "all" || card.getAttribute("data-pod-id") === selectedPod) {
@@ -128,8 +129,29 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     });
 
+    // 1.5 Update KPI Cards
+    if (fullData && fullData.summary) {
+      const kpiCrit = document.getElementById("kpiCriticalPods");
+      if (kpiCrit) kpiCrit.innerHTML = fullData.summary.critical_pods_count;
+      const kpiUnmet = document.getElementById("kpiUnmetNeed");
+      if (kpiUnmet) kpiUnmet.innerHTML = fullData.summary.total_unmet_council_need;
+    }
+    const kpiCalStatus = document.getElementById("kpiCalibrationStatus");
+    const kpiCalSub = document.getElementById("kpiCalibrationSub");
+    if (kpiCalStatus) {
+      if (isCalibrated) {
+        kpiCalStatus.innerHTML = "Active";
+        kpiCalStatus.style.color = "var(--accent-emerald)";
+        if (kpiCalSub) kpiCalSub.innerHTML = "+1,250L Water / +45kg Food offset";
+      } else {
+        kpiCalStatus.innerHTML = "Inactive";
+        kpiCalStatus.style.color = "var(--text-muted)";
+        if (kpiCalSub) kpiCalSub.innerHTML = "Raw untampered drone data";
+      }
+    }
+
     // 2. Peacock Disruption Fetching & DOM Updating
-    fetch(`/api/forecast/?disruption=${selectedDisruption}&days=7`)
+    fetch(`/api/forecast/?disruption=${selectedDisruption}&days=7&calibrate=${isCalibrated}`)
       .then(r => r.json())
       .then(d => {
         if (d.status === "success" && d.forecasts) {
@@ -142,7 +164,7 @@ document.addEventListener("DOMContentLoaded", function() {
             // Water
             const wText = document.querySelector(`.runway-text-water-${safePodId}`);
             const wBar = document.querySelector(`.runway-bar-water-${safePodId}`);
-            if (wText) wText.innerHTML = `${wDays.toFixed(1)} days`;
+            if (wText) wText.innerHTML = `${wDays.toFixed(1)} days (${f.current_water_stock.toFixed(0)} L)`;
             if (wBar) {
               wBar.style.width = `${Math.min(wDays, 100)}%`;
               wBar.className = `progress-bar-fill runway-bar-water-${safePodId} ` + (wDays > 10 ? 'fill-emerald' : wDays > 5 ? 'fill-amber' : 'fill-rose');
@@ -151,7 +173,7 @@ document.addEventListener("DOMContentLoaded", function() {
             // Food
             const fText = document.querySelector(`.runway-text-food-${safePodId}`);
             const fBar = document.querySelector(`.runway-bar-food-${safePodId}`);
-            if (fText) fText.innerHTML = `${fDays.toFixed(1)} days`;
+            if (fText) fText.innerHTML = `${fDays.toFixed(1)} days (${f.current_food_stock.toFixed(0)} kg)`;
             if (fBar) {
               fBar.style.width = `${Math.min(fDays, 100)}%`;
               fBar.className = `progress-bar-fill runway-bar-food-${safePodId} ` + (fDays > 10 ? 'fill-emerald' : fDays > 5 ? 'fill-amber' : 'fill-rose');
@@ -160,7 +182,7 @@ document.addEventListener("DOMContentLoaded", function() {
             // Medicine
             const mText = document.querySelector(`.runway-text-medicine-${safePodId}`);
             const mBar = document.querySelector(`.runway-bar-medicine-${safePodId}`);
-            if (mText) mText.innerHTML = `${mDays.toFixed(1)} days`;
+            if (mText) mText.innerHTML = `${mDays.toFixed(1)} days (${f.current_medicine_stock.toFixed(0)} units)`;
             if (mBar) {
               mBar.style.width = `${Math.min(mDays, 100)}%`;
               mBar.className = `progress-bar-fill runway-bar-medicine-${safePodId} ` + (mDays > 10 ? 'fill-emerald' : mDays > 5 ? 'fill-amber' : 'fill-rose');
@@ -385,6 +407,37 @@ document.addEventListener("DOMContentLoaded", function() {
         }
       }
     });
+  }
+
+  // 3b. Council Allocation Table
+  function renderCouncilTable(records) {
+    const tbody = document.getElementById("councilTableBody");
+    if (!tbody) return;
+
+    // Show only the latest 30 records to keep UI clean, sorted by date descending then rank
+    const sortedRecords = [...records].sort((a, b) => {
+      if (a.event_date !== b.event_date) return b.event_date.localeCompare(a.event_date);
+      return a.fair_priority_rank - b.fair_priority_rank;
+    }).slice(0, 30);
+
+    let html = "";
+    sortedRecords.forEach(r => {
+      html += `
+        <tr>
+          <td class="mono">${r.event_date}</td>
+          <td style="font-weight: 600;">${r.pod_name}</td>
+          <td><span class="badge" style="background: rgba(255,255,255,0.05);">${r.resource_type}</span></td>
+          <td><span class="badge badge-${r.need_status}">${r.need_status}</span></td>
+          <td>${r.request_submitted ? '<span style="color:var(--accent-emerald);">Yes</span>' : '<span style="color:var(--accent-rose); font-weight:700;">No (Silent)</span>'}</td>
+          <td class="mono">${r.estimated_true_need}</td>
+          <td class="mono">${r.naive_priority_rank}</td>
+          <td class="mono" style="color: var(--accent-cyan); font-weight: 700;">${r.fair_priority_rank}</td>
+          <td class="mono" style="color: var(--accent-emerald);">${r.amount_allocated}</td>
+          <td class="mono" style="color: var(--accent-rose);">${r.unmet_amount > 0 ? r.unmet_amount : '-'}</td>
+        </tr>
+      `;
+    });
+    tbody.innerHTML = html;
   }
 
   // 4. Drone Calibration Offset Analyzer
